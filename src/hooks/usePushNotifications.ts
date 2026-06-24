@@ -42,9 +42,14 @@ export const usePushNotifications = (): PushNotificationState => {
         return;
       }
 
-      token = await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.eas?.projectId,
-      });
+      try {
+        token = await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig?.extra?.eas?.projectId,
+        });
+      } catch (e) {
+        console.log("Error getting push token. Firebase might not be configured.", e);
+        return undefined;
+      }
     }
 
     if (Platform.OS === 'android') {
@@ -60,9 +65,11 @@ export const usePushNotifications = (): PushNotificationState => {
   }
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then((token) => {
-      setExpoPushToken(token);
-    });
+    registerForPushNotificationsAsync()
+      .then((token) => {
+        setExpoPushToken(token);
+      })
+      .catch((err) => console.log("Push registration error:", err));
 
     notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
       setNotification(notification);
