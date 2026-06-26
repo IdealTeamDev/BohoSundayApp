@@ -7,6 +7,7 @@ export default function Index() {
   if (user && checkSession()) {
     if (user.role === 'bouncer') return <Redirect href="/(staff)/bouncer/scanner" />;
     if (user.role === 'waiter') return <Redirect href="/(staff)/waiter/map" />;
+    if (user.role === 'viewer') return <Redirect href="/(admin)/tables" />;
   }
   
   return <Redirect href="/(auth)/login" />;

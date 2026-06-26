@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
+import { useAuthStore } from '../../store/useAuthStore';
+import { Redirect } from 'expo-router';
 import { UserPlus, Trash2, KeyRound } from 'lucide-react-native';
 import { StaffMember } from '../../types';
 
 export default function StaffManagerScreen() {
+  const { user } = useAuthStore();
+  if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
+
   const { staff, addStaff, toggleStaffStatus, removeStaff } = useDatabaseStore();
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newPin, setNewPin] = useState('');
-  const [newRole, setNewRole] = useState<'bouncer' | 'waiter'>('bouncer');
+  const [newRole, setNewRole] = useState<'bouncer' | 'waiter' | 'viewer'>('bouncer');
 
   const handleAdd = () => {
     if (newName.trim() !== '' && newUsername.trim() !== '' && newPin.trim() !== '') {
@@ -40,8 +45,11 @@ export default function StaffManagerScreen() {
           <TouchableOpacity style={[styles.roleBtn, { marginRight: 12 }, newRole === 'bouncer' && styles.roleBtnActive]} onPress={() => setNewRole('bouncer')}>
             <Text style={[styles.roleText, newRole === 'bouncer' && styles.roleTextActive]}>Portero</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.roleBtn, newRole === 'waiter' && styles.roleBtnActive]} onPress={() => setNewRole('waiter')}>
+          <TouchableOpacity style={[styles.roleBtn, { marginRight: 12 }, newRole === 'waiter' && styles.roleBtnActive]} onPress={() => setNewRole('waiter')}>
             <Text style={[styles.roleText, newRole === 'waiter' && styles.roleTextActive]}>Mesero</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.roleBtn, newRole === 'viewer' && styles.roleBtnActive]} onPress={() => setNewRole('viewer')}>
+            <Text style={[styles.roleText, newRole === 'viewer' && styles.roleTextActive]}>Visualizador</Text>
           </TouchableOpacity>
         </View>
 
@@ -58,9 +66,9 @@ export default function StaffManagerScreen() {
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
               <Text style={styles.name}>{member.name}</Text>
-              <View style={[styles.badge, { backgroundColor: member.role === 'bouncer' ? '#686a54' : '#47311f' }]}>
-                <Text style={[styles.badgeText, { color: '#f4efe9' }]}>
-                  {member.role === 'bouncer' ? 'PORTERO' : 'MESERO'}
+              <View style={[styles.badge, { backgroundColor: member.role === 'bouncer' ? '#686a54' : member.role === 'viewer' ? '#4a5568' : '#47311f' }]}>
+                <Text style={styles.badgeText}>
+                  {member.role === 'bouncer' ? 'PORTERO' : member.role === 'viewer' ? 'VISUALIZADOR' : 'MESERO'}
                 </Text>
               </View>
             </View>

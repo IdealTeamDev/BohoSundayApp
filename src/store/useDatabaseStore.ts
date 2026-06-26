@@ -21,8 +21,9 @@ const mockTiers: Tier[] = [
 ];
 
 const mockStaff: StaffMember[] = [
-  { id: 'staff_1', name: 'Portero Demo', username: 'portero1', pin: '1234', role: 'bouncer', isActive: true },
-  { id: 'staff_2', name: 'Mesero VIP', username: 'mesero1', pin: '1234', role: 'waiter', isActive: true },
+  { id: 'staff_1', name: 'Portero Demo', username: 'portero', pin: '1234', role: 'bouncer', isActive: true },
+  { id: 'staff_2', name: 'Mesero VIP', username: 'mesero', pin: '1234', role: 'waiter', isActive: true },
+  { id: 'staff_3', name: 'Visualizador Demo', username: 'viewer', pin: '1234', role: 'viewer', isActive: true },
 ];
 
 interface DatabaseState {
@@ -49,7 +50,7 @@ interface DatabaseState {
   editTier: (id: string, name: string, price: number, capacity: number) => void;
   
   // Staff functions
-  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'waiter') => void;
+  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'waiter' | 'viewer') => void;
   toggleStaffStatus: (id: string) => void;
   removeStaff: (id: string) => void;
 

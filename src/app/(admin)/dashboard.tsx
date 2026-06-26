@@ -1,9 +1,14 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { Redirect } from 'expo-router';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { Trash2, Plus, QrCode, Edit2, Save, Send } from 'lucide-react-native';
 
 export default function AdminDashboard() {
+  const { user } = useAuthStore();
+  if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
+  
   const { tiers, addTier, removeTier, editTier } = useDatabaseStore();
   const [newTierName, setNewTierName] = useState('');
   const [newPrice, setNewPrice] = useState('');

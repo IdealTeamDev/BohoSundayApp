@@ -1,9 +1,9 @@
-export type Role = 'bouncer' | 'waiter' | 'admin';
+export type Role = 'bouncer' | 'waiter' | 'admin' | 'viewer';
 
 export interface User {
   id: string;
   name: string;
-  role: 'admin' | 'bouncer' | 'waiter';
+  role: 'admin' | 'bouncer' | 'waiter' | 'viewer';
   pushToken?: string;
 }
 
@@ -12,7 +12,7 @@ export interface StaffMember {
   name: string;
   username: string;
   pin: string;
-  role: 'bouncer' | 'waiter';
+  role: 'bouncer' | 'waiter' | 'viewer';
   isActive: boolean;
   pushToken?: string;
 }

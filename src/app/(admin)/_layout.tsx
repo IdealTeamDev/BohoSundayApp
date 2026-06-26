@@ -6,8 +6,10 @@ import { useAuthStore } from '../../store/useAuthStore';
 import LogoutConfirmModal from '../../components/LogoutConfirmModal';
 
 export default function AdminLayout() {
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
+  
+  const isViewer = user?.role === 'viewer';
 
   return (
     <>
@@ -38,6 +40,7 @@ export default function AdminLayout() {
         <Tabs.Screen
           name="dashboard"
           options={{
+            href: isViewer ? null : '/(admin)/dashboard',
             title: 'Ajustes de Evento',
             tabBarIcon: ({ color }) => <Settings color={color} size={24} />,
           }}
@@ -59,6 +62,7 @@ export default function AdminLayout() {
         <Tabs.Screen
           name="staff"
           options={{
+            href: isViewer ? null : '/(admin)/staff',
             title: 'Staff',
             tabBarIcon: ({ color }) => <Users color={color} size={24} />,
           }}

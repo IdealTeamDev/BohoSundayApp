@@ -49,6 +49,8 @@ export default function RootLayout() {
           router.replace('/(staff)/bouncer/scanner');
         } else if (user.role === 'waiter') {
           router.replace('/(staff)/waiter/map');
+        } else if (user.role === 'viewer') {
+          router.replace('/(admin)/tables');
         } else if (user.role === 'admin') {
           router.replace('/(admin)/dashboard');
         } else {
