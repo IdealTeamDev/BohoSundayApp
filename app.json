@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "AppAdmin",
-    "slug": "AppAdmin",
+    "name": "Boho Sunday Staff",
+    "slug": "boho-sunday-staff",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
