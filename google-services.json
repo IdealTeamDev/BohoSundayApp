@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "626570811107",
+    "project_id": "boho-sunday-app",
+    "storage_bucket": "boho-sunday-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:626570811107:android:e3ed6f713346f6173917d6",
+        "android_client_info": {
+          "package_name": "com.bohosunday.staffapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQBLDRxLt_D1NlU0KM4466XP2A_xwQgvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
