@@ -56,7 +56,8 @@
           "faceIDPermission": "Permite el acceso rápido con tu rostro o huella."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
