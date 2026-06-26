@@ -57,16 +57,7 @@
         }
       ],
       "expo-sharing",
-      "expo-notifications",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "1.8.20",
-            "extraProguardRules": "-keep class com.google.firebase.** { *; }"
-          }
-        }
-      ]
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
