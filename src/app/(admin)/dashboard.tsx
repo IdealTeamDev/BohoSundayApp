@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert, Image } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -148,15 +148,15 @@ export default function AdminDashboard() {
           
           <View style={styles.qrRow}>
             <View style={styles.qrItem}>
-              <QrCode size={40} color="#686a54" />
+              <Image source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tick_group_1' }} style={{ width: 100, height: 100, marginBottom: 8 }} />
               <Text style={styles.qrText}>tick_group_1</Text>
             </View>
             <View style={styles.qrItem}>
-              <QrCode size={40} color="#686a54" />
+              <Image source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tick_single_1' }} style={{ width: 100, height: 100, marginBottom: 8 }} />
               <Text style={styles.qrText}>tick_single_1</Text>
             </View>
             <View style={styles.qrItem}>
-              <QrCode size={40} color="#686a54" />
+              <Image source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tick_vip_1' }} style={{ width: 100, height: 100, marginBottom: 8 }} />
               <Text style={styles.qrText}>tick_vip_1</Text>
             </View>
           </View>
