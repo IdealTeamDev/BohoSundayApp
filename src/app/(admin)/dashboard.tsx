@@ -7,7 +7,7 @@ import { Trash2, Plus, QrCode, Edit2, Save, Send } from 'lucide-react-native';
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
-  if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
+  if (user?.role === 'viewer1' || user?.role === 'viewer2') return <Redirect href="/(admin)/tables" />;
   
   const { tiers, addTier, removeTier, editTier } = useDatabaseStore();
   const [newTierName, setNewTierName] = useState('');
@@ -48,9 +48,9 @@ export default function AdminDashboard() {
     const tokens = staff.map(s => s.pushToken).filter(t => t) as string[];
     if (tokens.length > 0) {
       await sendPushNotification(tokens, broadcastTitle, broadcastBody);
-      alert('Notificación enviada a ' + tokens.length + ' dispositivo(s)!');
+      Alert.alert('Éxito', 'Notificación enviada a ' + tokens.length + ' dispositivo(s)!');
     } else {
-      alert('No hay personal con notificaciones activas en este momento.');
+      Alert.alert('Aviso', 'No hay personal con notificaciones activas en este momento.');
     }
     setBroadcastTitle('');
     setBroadcastBody('');
@@ -181,7 +181,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginTop: 8,
     textTransform: 'uppercase',
-    fontFamily: 'NunitoSans_400Regular',
   },
   form: {
     flexDirection: 'column',
@@ -222,7 +221,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'NunitoSans_600SemiBold',
     marginBottom: 4,
-    fontFamily: 'NunitoSans_600SemiBold',
   },
   tableMeta: {
     color: '#686a54',
@@ -259,6 +257,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 8,
     fontFamily: 'NunitoSans_600SemiBold',
-    fontFamily: 'NunitoSans_400Regular',
   }
 });

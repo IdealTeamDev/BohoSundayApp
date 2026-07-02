@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs } from 'expo-router';
-import { Settings, Grid, LogOut, FileBarChart, Users } from 'lucide-react-native';
+import { Settings, Grid, LogOut, FileBarChart, Users, Scan, QrCode, Map } from 'lucide-react-native';
 import { TouchableOpacity } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import LogoutConfirmModal from '../../components/LogoutConfirmModal';
@@ -8,9 +8,7 @@ import LogoutConfirmModal from '../../components/LogoutConfirmModal';
 export default function AdminLayout() {
   const { logout, user } = useAuthStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
-  
-  const isViewer = user?.role === 'viewer';
-
+  const isViewer = user?.role === 'viewer1' || user?.role === 'viewer2';
   return (
     <>
       <Tabs
@@ -65,6 +63,30 @@ export default function AdminLayout() {
             href: isViewer ? null : '/(admin)/staff',
             title: 'Staff',
             tabBarIcon: ({ color }) => <Users color={color} size={24} />,
+          }}
+        />
+        <Tabs.Screen
+          name="scanner"
+          options={{
+            href: isViewer ? null : '/(admin)/scanner',
+            title: 'Escáner',
+            tabBarIcon: ({ color }) => <Scan color={color} size={24} />,
+          }}
+        />
+        <Tabs.Screen
+          name="qr-manager"
+          options={{
+            href: isViewer ? null : '/(admin)/qr-manager',
+            title: 'Gestor QR',
+            tabBarIcon: ({ color }) => <QrCode color={color} size={24} />,
+          }}
+        />
+        <Tabs.Screen
+          name="map"
+          options={{
+            href: isViewer ? null : '/(admin)/map',
+            title: 'Mapa',
+            tabBarIcon: ({ color }) => <Map color={color} size={24} />,
           }}
         />
       </Tabs>

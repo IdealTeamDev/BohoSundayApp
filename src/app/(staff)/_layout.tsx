@@ -3,8 +3,7 @@ import { Stack } from 'expo-router';
 export default function StaffLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="bouncer/scanner" />
-      <Stack.Screen name="waiter/map" />
+      <Stack.Screen name="bouncer" />
     </Stack>
   );
 }

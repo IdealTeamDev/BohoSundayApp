@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs } from 'expo-router';
-import { Camera, List, BarChart3, LogOut, Plane } from 'lucide-react-native';
+import { Camera, List, BarChart3, LogOut, Plane, Map } from 'lucide-react-native';
 import { TouchableOpacity, View, Text } from 'react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useDatabaseStore } from '../../../store/useDatabaseStore';
@@ -72,6 +72,18 @@ export default function BouncerLayout() {
           options={{
             title: 'Asistentes',
             tabBarIcon: ({ color }) => <List color={color} size={24} />,
+            headerRight: () => (
+              <TouchableOpacity onPress={() => setLogoutVisible(true)} style={{ marginRight: 16 }}>
+                <LogOut color="#ef4444" size={20} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="map"
+          options={{
+            title: 'Mapa',
+            tabBarIcon: ({ color }) => <Map color={color} size={24} />,
             headerRight: () => (
               <TouchableOpacity onPress={() => setLogoutVisible(true)} style={{ marginRight: 16 }}>
                 <LogOut color="#ef4444" size={20} />

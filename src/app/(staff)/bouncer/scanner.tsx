@@ -61,12 +61,12 @@ export default function ScannerScreen() {
       if (ticket && ticket.tableId) {
         const table = tables.find(t => t.id === ticket.tableId);
         if (table) {
-          const waiterTokens = staff
-            .filter(s => s.role === 'waiter' && s.pushToken)
+          const notifyTokens = staff
+            .filter(s => s.role === 'viewer1' && s.pushToken)
             .map(s => s.pushToken!);
-          if (waiterTokens.length > 0) {
+          if (notifyTokens.length > 0) {
             sendPushNotification(
-              waiterTokens, 
+              notifyTokens, 
               `¡Mesa ${table.name} en Puerta! 🍾`, 
               `El cliente ${ticket.buyerName} acaba de ingresar con ${count} personas.`
             );

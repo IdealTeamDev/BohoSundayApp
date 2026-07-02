@@ -22,8 +22,8 @@ const mockTiers: Tier[] = [
 
 const mockStaff: StaffMember[] = [
   { id: 'staff_1', name: 'Portero Demo', username: 'portero', pin: '1234', role: 'bouncer', isActive: true },
-  { id: 'staff_2', name: 'Mesero VIP', username: 'mesero', pin: '1234', role: 'waiter', isActive: true },
-  { id: 'staff_3', name: 'Visualizador Demo', username: 'viewer', pin: '1234', role: 'viewer', isActive: true },
+  { id: 'staff_2', name: 'Viewer 1 (Completo)', username: 'viewer1', pin: '1234', role: 'viewer1', isActive: true },
+  { id: 'staff_3', name: 'Viewer 2 (Parcial)', username: 'viewer2', pin: '1234', role: 'viewer2', isActive: true },
 ];
 
 interface DatabaseState {
@@ -48,9 +48,10 @@ interface DatabaseState {
   addTier: (name: string, price: number, capacity: number) => void;
   removeTier: (id: string) => void;
   editTier: (id: string, name: string, price: number, capacity: number) => void;
+  adminCreateTicket: (buyerName: string, phone: string, tierId: string, capacity: number, tableId?: string) => void;
   
   // Staff functions
-  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'waiter' | 'viewer') => void;
+  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer1' | 'viewer2') => void;
   toggleStaffStatus: (id: string) => void;
   removeStaff: (id: string) => void;
 
@@ -173,6 +174,23 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set((state) => ({
       tiers: state.tiers.map(t => t.id === id ? { ...t, name, price, capacity } : t)
     }));
+  },
+
+  adminCreateTicket: (buyerName, phone, tierId, capacity, tableId) => {
+    const newId = `qr_${Date.now()}`;
+    const newTicket: Ticket = {
+      id: newId,
+      qrCode: newId,
+      buyerName,
+      phone,
+      capacity,
+      used: 0,
+      tierId,
+      tableId,
+      status: 'valid',
+      createdAt: Date.now()
+    };
+    set(state => ({ tickets: { ...state.tickets, [newId]: newTicket } }));
   },
 
   addStaff: (name, username, pin, role) => {
