@@ -7,11 +7,13 @@ export default function TablesManagerScreen() {
   const { tables, addTable, removeTable } = useDatabaseStore();
   const [newTableName, setNewTableName] = useState('');
   const [newCapacity, setNewCapacity] = useState('10');
+  const [newPrice, setNewPrice] = useState('');
 
   const handleAdd = () => {
     if (newTableName.trim() !== '') {
-      addTable(newTableName, parseInt(newCapacity) || 10);
+      addTable(newTableName, parseInt(newCapacity) || 10, parseFloat(newPrice) || 0);
       setNewTableName('');
+      setNewPrice('');
     }
   };
 
@@ -33,7 +35,7 @@ export default function TablesManagerScreen() {
             onChangeText={setNewTableName} 
           />
         </View>
-        <View style={{ width: 80, marginRight: 8 }}>
+        <View style={{ width: 60, marginRight: 8 }}>
           <TextInput 
             style={styles.input} 
             placeholder="Aforo" 
@@ -41,6 +43,16 @@ export default function TablesManagerScreen() {
             keyboardType="numeric" 
             value={newCapacity} 
             onChangeText={setNewCapacity} 
+          />
+        </View>
+        <View style={{ width: 80, marginRight: 8 }}>
+          <TextInput 
+            style={styles.input} 
+            placeholder="Precio $" 
+            placeholderTextColor="#bdb39b" 
+            keyboardType="numeric" 
+            value={newPrice} 
+            onChangeText={setNewPrice} 
           />
         </View>
         <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
@@ -58,7 +70,7 @@ export default function TablesManagerScreen() {
           <View style={styles.card}>
             <View>
               <Text style={styles.tableName}>{item.name}</Text>
-              <Text style={styles.tableMeta}>Aforo total: {item.capacity} personas</Text>
+              <Text style={styles.tableMeta}>Aforo total: {item.capacity} personas {item.price ? `| Precio: $${item.price}` : ''}</Text>
               <View style={[styles.statusBadge, { backgroundColor: item.status === 'available' ? 'rgba(104, 106, 84, 0.2)' : 'rgba(71, 49, 31, 0.2)' }]}>
                  <Text style={[styles.statusText, { color: item.status === 'available' ? '#686a54' : '#47311f' }]}>
                    {item.status.toUpperCase()}

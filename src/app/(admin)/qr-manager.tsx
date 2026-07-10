@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal,
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { Plus, X, Share2, Download } from 'lucide-react-native';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ticket } from '../../types';
 
 export default function QRManagerScreen() {
   const { tickets, tiers, tables, adminCreateTicket } = useDatabaseStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
+  const { user } = useAuthStore();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   // Form state
@@ -94,9 +95,11 @@ export default function QRManagerScreen() {
         )}
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
-        <Plus color="#f4efe9" size={24} />
-      </TouchableOpacity>
+      {user?.role === 'admin' && (
+        <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
+          <Plus color="#f4efe9" size={24} />
+        </TouchableOpacity>
+      )}
 
       {/* MODAL CREAR TICKET */}
       <Modal visible={modalVisible} animationType="slide" transparent>

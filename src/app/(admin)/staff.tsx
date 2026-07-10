@@ -15,7 +15,7 @@ export default function StaffManagerScreen() {
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newPin, setNewPin] = useState('');
-  const [newRole, setNewRole] = useState<'bouncer' | 'viewer1' | 'viewer2'>('bouncer');
+  const [newRole, setNewRole] = useState<'bouncer' | 'viewer'>('bouncer');
 
   const loadStaff = async () => {
     try {
@@ -57,7 +57,7 @@ export default function StaffManagerScreen() {
     }
   };
 
-  if (user?.role === 'viewer1' || user?.role === 'viewer2') return <Redirect href="/(admin)/tables" />;
+  if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
 
   return (
     <ScrollView style={styles.container}>
@@ -79,11 +79,8 @@ export default function StaffManagerScreen() {
           <TouchableOpacity style={[styles.roleBtn, { marginRight: 12 }, newRole === 'bouncer' && styles.roleBtnActive]} onPress={() => setNewRole('bouncer')}>
             <Text style={[styles.roleText, newRole === 'bouncer' && styles.roleTextActive]}>Portero</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.roleBtn, { marginRight: 12 }, newRole === 'viewer1' && styles.roleBtnActive]} onPress={() => setNewRole('viewer1')}>
-            <Text style={[styles.roleText, newRole === 'viewer1' && styles.roleTextActive]}>Viewer 1 (Full)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.roleBtn, newRole === 'viewer2' && styles.roleBtnActive]} onPress={() => setNewRole('viewer2')}>
-            <Text style={[styles.roleText, newRole === 'viewer2' && styles.roleTextActive]}>Viewer 2 (Ventas)</Text>
+          <TouchableOpacity style={[styles.roleBtn, { marginRight: 12 }, newRole === 'viewer' && styles.roleBtnActive]} onPress={() => setNewRole('viewer')}>
+            <Text style={[styles.roleText, newRole === 'viewer' && styles.roleTextActive]}>Viewer</Text>
           </TouchableOpacity>
         </View>
 
@@ -103,9 +100,9 @@ export default function StaffManagerScreen() {
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
               <Text style={styles.name}>{member.name}</Text>
-              <View style={[styles.badge, { backgroundColor: member.role === 'bouncer' ? '#686a54' : member.role === 'viewer1' ? '#4a5568' : '#2d3748' }]}>
+              <View style={[styles.badge, { backgroundColor: member.role === 'bouncer' ? '#686a54' : '#4a5568' }]}>
                 <Text style={styles.badgeText}>
-                  {member.role === 'bouncer' ? 'PORTERO' : member.role === 'viewer1' ? 'VIEWER 1' : 'VIEWER 2'}
+                  {member.role === 'bouncer' ? 'PORTERO' : 'VIEWER'}
                 </Text>
               </View>
             </View>

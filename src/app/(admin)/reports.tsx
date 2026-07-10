@@ -9,7 +9,7 @@ import { api, OrderInfo } from '../../services/api';
 
 export default function ReportsScreen() {
   const { user } = useAuthStore();
-  const showRevenue = user?.role !== 'viewer2';
+  const showRevenue = true; 
   
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

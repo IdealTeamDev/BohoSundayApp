@@ -1,9 +1,9 @@
-export type Role = 'bouncer' | 'admin' | 'viewer1' | 'viewer2';
+export type Role = 'bouncer' | 'admin' | 'viewer';
 
 export interface User {
   id: string;
   name: string;
-  role: 'bouncer' | 'admin' | 'viewer1' | 'viewer2';
+  role: 'bouncer' | 'admin' | 'viewer';
   pushToken?: string;
 }
 
@@ -12,7 +12,7 @@ export interface StaffMember {
   name: string;
   username: string;
   pin: string;
-  role: 'bouncer' | 'viewer1' | 'viewer2';
+  role: 'bouncer' | 'viewer';
   isActive: boolean;
   pushToken?: string;
 }
@@ -50,6 +50,7 @@ export interface Table {
   zoneId: string;
   name: string;
   capacity: number;
+  price?: number;
   status: 'available' | 'reserved' | 'occupied';
   ticketId?: string;
 }

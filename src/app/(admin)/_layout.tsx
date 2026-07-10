@@ -4,11 +4,14 @@ import { Settings, Grid, LogOut, FileBarChart, Users, Scan, QrCode, Map } from '
 import { TouchableOpacity } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import LogoutConfirmModal from '../../components/LogoutConfirmModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AdminLayout() {
   const { logout, user } = useAuthStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
-  const isViewer = user?.role === 'viewer1' || user?.role === 'viewer2';
+  const isViewer = user?.role === 'viewer';
+  const insets = useSafeAreaInsets();
+  
   return (
     <>
       <Tabs
@@ -18,9 +21,9 @@ export default function AdminLayout() {
           tabBarStyle: { 
             backgroundColor: '#d9d1c0', 
             borderTopColor: '#bdb39b',
-            paddingBottom: 15,
+            paddingBottom: Math.max(insets.bottom, 15),
             paddingTop: 10,
-            height: 80,
+            height: 65 + Math.max(insets.bottom, 15),
           },
           tabBarLabelStyle: {
             fontSize: 11,

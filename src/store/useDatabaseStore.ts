@@ -43,7 +43,7 @@ interface DatabaseState {
   checkSessionValidity: (userId: string, deviceId: string) => boolean;
   
   // Admin functions
-  addTable: (name: string, capacity: number) => void;
+  addTable: (name: string, capacity: number, price?: number) => void;
   removeTable: (id: string) => void;
   addTier: (name: string, price: number, capacity: number) => void;
   removeTier: (id: string) => void;
@@ -150,9 +150,9 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     return { success: true, message: 'SIGA' };
   },
 
-  addTable: (name, capacity) => {
-    const newId = `t${Date.now()}`;
-    const newTable: Table = { id: newId, zoneId: 'z1', name, capacity, status: 'available' };
+  addTable: (name, capacity, price) => {
+    const newId = `table_${Date.now()}`;
+    const newTable: Table = { id: newId, zoneId: 'z1', name, capacity, price, status: 'available' };
     set((state) => ({ tables: [...state.tables, newTable] }));
   },
 
