@@ -86,5 +86,32 @@ export const api = {
       body: JSON.stringify({ count })
     });
     return await res.json();
+  },
+
+  getStaff: async () => {
+    const res = await fetch(`${API_URL}/admin/staff`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Failed to fetch staff');
+    return await res.json();
+  },
+
+  addStaff: async (data: { name: string, username: string, pin: string, role: string }) => {
+    const res = await fetch(`${API_URL}/admin/staff`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al crear staff');
+    return json;
+  },
+
+  deleteStaff: async (id: string) => {
+    const res = await fetch(`${API_URL}/admin/staff?id=${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al eliminar staff');
+    return json;
   }
 };

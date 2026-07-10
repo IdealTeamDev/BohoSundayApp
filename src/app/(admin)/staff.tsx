@@ -1,29 +1,63 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch } from 'react-native';
-import { useDatabaseStore } from '../../store/useDatabaseStore';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, ActivityIndicator, Alert } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Redirect } from 'expo-router';
 import { UserPlus, Trash2, KeyRound } from 'lucide-react-native';
 import { StaffMember } from '../../types';
+import { api } from '../../services/api';
 
 export default function StaffManagerScreen() {
   const { user } = useAuthStore();
-  if (user?.role === 'viewer1' || user?.role === 'viewer2') return <Redirect href="/(admin)/tables" />;
-
-  const { staff, addStaff, toggleStaffStatus, removeStaff } = useDatabaseStore();
+  
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newPin, setNewPin] = useState('');
   const [newRole, setNewRole] = useState<'bouncer' | 'viewer1' | 'viewer2'>('bouncer');
 
-  const handleAdd = () => {
-    if (newName.trim() !== '' && newUsername.trim() !== '' && newPin.trim() !== '') {
-      addStaff(newName, newUsername, newPin, newRole);
-      setNewName('');
-      setNewUsername('');
-      setNewPin('');
+  const loadStaff = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getStaff();
+      setStaff(data);
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Error', 'No se pudo cargar el equipo');
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadStaff();
+  }, []);
+
+  const handleAdd = async () => {
+    if (newName.trim() !== '' && newUsername.trim() !== '' && newPin.trim() !== '') {
+      try {
+        await api.addStaff({ name: newName, username: newUsername, pin: newPin, role: newRole });
+        setNewName('');
+        setNewUsername('');
+        setNewPin('');
+        loadStaff();
+      } catch (e: any) {
+        Alert.alert('Error', e.message);
+      }
+    }
+  };
+
+  const removeStaff = async (id: string) => {
+    try {
+      await api.deleteStaff(id);
+      loadStaff();
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    }
+  };
+
+  if (user?.role === 'viewer1' || user?.role === 'viewer2') return <Redirect href="/(admin)/tables" />;
 
   return (
     <ScrollView style={styles.container}>
@@ -61,7 +95,10 @@ export default function StaffManagerScreen() {
 
       <Text style={styles.title}>Equipo Actual ({staff.length})</Text>
 
-      {staff.map((member: StaffMember) => (
+      {loading ? (
+        <ActivityIndicator size="large" color="#47311f" />
+      ) : (
+        staff.map((member: StaffMember) => (
         <View key={member.id} style={[styles.card, !member.isActive && { opacity: 0.5 }]}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
@@ -81,7 +118,7 @@ export default function StaffManagerScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             <Switch
               value={member.isActive}
-              onValueChange={() => toggleStaffStatus(member.id)}
+              onValueChange={() => {}}
               trackColor={{ false: '#bdb39b', true: '#47311f' }}
               thumbColor="#f4efe9"
             />
@@ -90,7 +127,7 @@ export default function StaffManagerScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      ))}
+      )))}
       <View style={{ height: 40 }} />
     </ScrollView>
   );
