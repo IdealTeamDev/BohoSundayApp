@@ -18,45 +18,66 @@ export default function AdminDashboard() {
 
   // Form State for Tiers (Event Stages)
   const [newTierName, setNewTierName] = useState('');
-  const [newEndDate, setNewEndDate] = useState(''); // e.g. YYYY-MM-DD
-  const [newPriceEarly, setNewPriceEarly] = useState('');
-  const [newPriceGeneral, setNewPriceGeneral] = useState('');
-  const [newPriceBed, setNewPriceBed] = useState('');
-  const [newPriceTable, setNewPriceTable] = useState('');
+  const [newEndDate, setNewEndDate] = useState('');
+  const [newPrices, setNewPrices] = useState<import('../../types').ProductPrice[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // State for adding a new product directly in the form
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductType, setNewProductType] = useState<'ticket'|'bed'|'table'>('ticket');
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleAddOrEdit = () => {
     if (newTierName.trim() !== '') {
       const endDate = newEndDate || new Date(Date.now() + 86400000).toISOString();
-      const pE = parseFloat(newPriceEarly) || 0;
-      const pG = parseFloat(newPriceGeneral) || 0;
-      const pB = parseFloat(newPriceBed) || 0;
-      const pT = parseFloat(newPriceTable) || 0;
-
+      
       if (editingId) {
-        editTier(editingId, newTierName, endDate, pE, pG, pB, pT);
+        editTier(editingId, newTierName, endDate, newPrices);
         setEditingId(null);
       } else {
-        addTier(newTierName, endDate, pE, pG, pB, pT);
+        addTier(newTierName, endDate, newPrices);
       }
       setNewTierName('');
       setNewEndDate('');
-      setNewPriceEarly('');
-      setNewPriceGeneral('');
-      setNewPriceBed('');
-      setNewPriceTable('');
+      setNewPrices([]);
     }
   };
 
-  const startEdit = (tier: any) => {
+  const startEdit = (tier: import('../../types').Tier) => {
     setEditingId(tier.id);
     setNewTierName(tier.name);
     setNewEndDate(tier.endDate);
-    setNewPriceEarly(tier.priceEarly.toString());
-    setNewPriceGeneral(tier.priceGeneral.toString());
-    setNewPriceBed(tier.priceBed.toString());
-    setNewPriceTable(tier.priceTable.toString());
+    // clone to avoid direct mutation
+    setNewPrices(JSON.parse(JSON.stringify(tier.prices)));
+  };
+
+  const handleStartNewTier = () => {
+    setEditingId(null);
+    setNewTierName('');
+    setNewEndDate('');
+    if (tiers.length > 0) {
+      // Auto-fill from last tier
+      const lastTier = tiers[tiers.length - 1];
+      setNewPrices(JSON.parse(JSON.stringify(lastTier.prices)));
+    } else {
+      setNewPrices([]);
+    }
+  };
+
+  const addNewProduct = () => {
+    if (!newProductName.trim()) return;
+    const id = newProductType.substring(0, 1) + '_' + Date.now();
+    setNewPrices([...newPrices, { id, name: newProductName, type: newProductType, price: 0 }]);
+    setNewProductName('');
+  };
+
+  const updateProductPrice = (id: string, priceStr: string) => {
+    const val = parseFloat(priceStr) || 0;
+    setNewPrices(newPrices.map(p => p.id === id ? { ...p, price: val } : p));
+  };
+  
+  const removeProduct = (id: string) => {
+    setNewPrices(newPrices.filter(p => p.id !== id));
   };
 
   const loadStats = useCallback(async () => {
@@ -137,7 +158,10 @@ export default function AdminDashboard() {
 
         {/* TIERS MANAGEMENT SECTION */}
         <View style={[styles.mockSection, { borderTopWidth: 0 }]}>
-          <Text style={styles.title}>{editingId ? 'Editando Etapa' : 'Crear Etapa de Venta (Tier)'}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.title}>{editingId ? 'Editando Etapa' : 'Crear Etapa de Venta (Tier)'}</Text>
+            {!editingId && <TouchableOpacity onPress={handleStartNewTier}><Text style={{ color: '#47311f', fontFamily: 'NunitoSans_700Bold' }}>Auto-rellenar</Text></TouchableOpacity>}
+          </View>
           
           <View style={styles.form}>
             <TextInput 
@@ -154,18 +178,56 @@ export default function AdminDashboard() {
               value={newEndDate} 
               onChangeText={setNewEndDate} 
             />
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TextInput style={[styles.input, { flex: 1 }]} placeholder="Early $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceEarly} onChangeText={setNewPriceEarly} />
-              <TextInput style={[styles.input, { flex: 1 }]} placeholder="General $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceGeneral} onChangeText={setNewPriceGeneral} />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Camas VIP $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceBed} onChangeText={setNewPriceBed} />
-              <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Mesas $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceTable} onChangeText={setNewPriceTable} />
+            
+            <View style={{ backgroundColor: '#e8e3d5', padding: 12, borderRadius: 8 }}>
+              <Text style={[styles.title, { fontSize: 16, marginBottom: 8 }]}>Catálogo de Precios</Text>
               
-              <TouchableOpacity style={[styles.addBtn, editingId && { backgroundColor: '#47311f' }]} onPress={handleAddOrEdit}>
-                {editingId ? <Save color="#f4efe9" size={24} /> : <Plus color="#f4efe9" size={24} />}
-              </TouchableOpacity>
+              {newPrices.map(p => (
+                <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#231e1a' }}>{p.name}</Text>
+                    <Text style={{ fontFamily: 'NunitoSans_400Regular', color: '#686a54', fontSize: 12 }}>{p.type.toUpperCase()}</Text>
+                  </View>
+                  <TextInput 
+                    style={[styles.input, { flex: 1, height: 40, marginBottom: 0 }]} 
+                    placeholder="Precio" 
+                    keyboardType="numeric" 
+                    value={p.price.toString()} 
+                    onChangeText={(val) => updateProductPrice(p.id, val)} 
+                  />
+                  <TouchableOpacity onPress={() => removeProduct(p.id)}>
+                    <Trash2 color="#ef4444" size={20} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 }}>
+                <TextInput 
+                  style={[styles.input, { flex: 2, height: 40, marginBottom: 0 }]} 
+                  placeholder="Nuevo Producto..." 
+                  value={newProductName} 
+                  onChangeText={setNewProductName} 
+                />
+                <View style={{ flexDirection: 'row', flex: 1, gap: 4 }}>
+                  {['ticket', 'bed', 'table'].map(t => (
+                    <TouchableOpacity 
+                      key={t}
+                      onPress={() => setNewProductType(t as any)}
+                      style={{ padding: 4, borderRadius: 4, backgroundColor: newProductType === t ? '#47311f' : '#d9d1c0' }}
+                    >
+                      <Text style={{ color: newProductType === t ? '#fff' : '#231e1a', fontSize: 10 }}>{t.substring(0,3)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity onPress={addNewProduct} style={{ backgroundColor: '#686a54', padding: 8, borderRadius: 8 }}>
+                  <Plus color="#fff" size={16} />
+                </TouchableOpacity>
+              </View>
             </View>
+
+            <TouchableOpacity style={[styles.addBtn, { width: '100%', marginTop: 8 }]} onPress={handleAddOrEdit}>
+              {editingId ? <Text style={{ color: '#fff', fontFamily: 'NunitoSans_700Bold' }}>Guardar Cambios</Text> : <Text style={{ color: '#fff', fontFamily: 'NunitoSans_700Bold' }}>Crear Etapa</Text>}
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.title}>Etapas Existentes ({tiers.length})</Text>
@@ -174,8 +236,7 @@ export default function AdminDashboard() {
             <View key={item.id} style={styles.card}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.tableName}>{item.name}</Text>
-                <Text style={styles.tableMeta}>Early: ${item.priceEarly} | General: ${item.priceGeneral}</Text>
-                <Text style={styles.tableMeta}>Cama: ${item.priceBed} | Mesa: ${item.priceTable}</Text>
+                <Text style={styles.tableMeta}>{item.prices.length} productos configurados</Text>
                 <Text style={[styles.tableMeta, { marginTop: 4, color: '#47311f' }]}>Cierra: {new Date(item.endDate).toLocaleString()}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>

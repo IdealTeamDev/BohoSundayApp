@@ -16,8 +16,24 @@ const mockTickets: Record<string, Ticket> = {
 };
 
 const mockTiers: Tier[] = [
-  { id: 'tier_1', name: 'Preventa 1', endDate: '2026-07-20T23:59:59.000Z', priceEarly: 25, priceGeneral: 40, priceBed: 100, priceTable: 50 },
-  { id: 'tier_2', name: 'General', endDate: '2026-08-01T23:59:59.000Z', priceEarly: 30, priceGeneral: 50, priceBed: 120, priceTable: 60 },
+  { 
+    id: 'tier_1', name: 'Preventa 1', endDate: '2026-07-20T23:59:59.000Z', 
+    prices: [
+      { id: 'early', name: 'Early Bird', type: 'ticket', price: 25 },
+      { id: 'general', name: 'General', type: 'ticket', price: 40 },
+      { id: 'bed_vip', name: 'Cama VIP', type: 'bed', price: 100 },
+      { id: 'table_std', name: 'Mesa Estandar', type: 'table', price: 50 },
+    ]
+  },
+  { 
+    id: 'tier_2', name: 'General', endDate: '2026-08-01T23:59:59.000Z', 
+    prices: [
+      { id: 'early', name: 'Early Bird', type: 'ticket', price: 30 },
+      { id: 'general', name: 'General', type: 'ticket', price: 50 },
+      { id: 'bed_vip', name: 'Cama VIP', type: 'bed', price: 120 },
+      { id: 'table_std', name: 'Mesa Estandar', type: 'table', price: 60 },
+    ]
+  },
 ];
 
 const mockStaff: StaffMember[] = [
@@ -44,10 +60,10 @@ interface DatabaseState {
   // Admin functions
   addTable: (name: string, capacity: number, price?: number) => void;
   removeTable: (id: string) => void;
-  addTier: (name: string, endDate: string, priceEarly: number, priceGeneral: number, priceBed: number, priceTable: number) => void;
+  addTier: (name: string, endDate: string, prices: import('../types').ProductPrice[]) => void;
   removeTier: (id: string) => void;
-  editTier: (id: string, name: string, endDate: string, priceEarly: number, priceGeneral: number, priceBed: number, priceTable: number) => void;
-  adminCreateTicket: (buyerName: string, phone: string, ticketType: 'early' | 'general' | 'bed' | 'table', capacity: number, tableId?: string) => void;
+  editTier: (id: string, name: string, endDate: string, prices: import('../types').ProductPrice[]) => void;
+  adminCreateTicket: (buyerName: string, phone: string, ticketType: string, capacity: number, tableId?: string) => void;
 
   // Staff functions
   addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer') => void;
@@ -165,9 +181,9 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set((state) => ({ tables: state.tables.filter(t => t.id !== id) }));
   },
 
-  addTier: (name, endDate, priceEarly, priceGeneral, priceBed, priceTable) => {
+  addTier: (name, endDate, prices) => {
     const newId = `tier_${Date.now()}`;
-    const newTier: Tier = { id: newId, name, endDate, priceEarly, priceGeneral, priceBed, priceTable };
+    const newTier: Tier = { id: newId, name, endDate, prices };
     set((state) => ({ tiers: [...state.tiers, newTier] }));
   },
 
@@ -175,9 +191,9 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set((state) => ({ tiers: state.tiers.filter(t => t.id !== id) }));
   },
 
-  editTier: (id, name, endDate, priceEarly, priceGeneral, priceBed, priceTable) => {
+  editTier: (id, name, endDate, prices) => {
     set((state) => ({
-      tiers: state.tiers.map(t => t.id === id ? { ...t, name, endDate, priceEarly, priceGeneral, priceBed, priceTable } : t)
+      tiers: state.tiers.map(t => t.id === id ? { ...t, name, endDate, prices } : t)
     }));
   },
 

@@ -17,14 +17,18 @@ export interface StaffMember {
   pushToken?: string;
 }
 
+export interface ProductPrice {
+  id: string; // e.g., 'early', 'b_vip', 't_diamante'
+  name: string; // e.g., 'Early Bird', 'Cama VIP'
+  type: 'ticket' | 'bed' | 'table';
+  price: number;
+}
+
 export interface Tier {
   id: string;
   name: string;
   endDate: string;
-  priceEarly: number;
-  priceGeneral: number;
-  priceBed: number;
-  priceTable: number;
+  prices: ProductPrice[];
 }
 
 export interface Ticket {
@@ -36,7 +40,7 @@ export interface Ticket {
   used: number;
   zoneId?: string;
   tableId?: string;
-  ticketType: 'early' | 'general' | 'bed' | 'table';
+  ticketType: string;
   tierId?: string; // The stage when it was bought
   status: 'valid' | 'used' | 'invalid';
   createdAt?: number;
