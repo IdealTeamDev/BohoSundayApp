@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { Plus, X, Share2, Download } from 'lucide-react-native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
