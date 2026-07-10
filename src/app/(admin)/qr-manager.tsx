@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking, Platform } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Plus, X, Share2, MessageCircle } from 'lucide-react-native';
@@ -72,6 +72,18 @@ export default function QRManagerScreen() {
     try {
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}`;
       const safeName = selectedTicket.buyerName.replace(/[^a-zA-Z0-9]/g, '_');
+      
+      if (Platform.OS === 'web') {
+        const link = document.createElement('a');
+        link.href = qrUrl;
+        link.download = `QR_${safeName}.png`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
       const fileUri = (FileSystem.documentDirectory || FileSystem.cacheDirectory) + `QR_${safeName}.png`;
       
       const { uri } = await FileSystem.downloadAsync(qrUrl, fileUri);
