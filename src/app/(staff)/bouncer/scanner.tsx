@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { useAuthStore } from '../../../store/useAuthStore';
-import { useDatabaseStore } from '../../../store/useDatabaseStore';
-import { LogOut, WifiOff, Users, CheckCircle, XCircle, PlusCircle } from 'lucide-react-native';
+import { api, OrderInfo } from '../../../services/api';
+import { Users, CheckCircle, XCircle } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,16 +13,10 @@ export default function ScannerScreen() {
   const [feedback, setFeedback] = useState<'success' | 'error' | null>(null);
   const [message, setMessage] = useState('');
   
-  const { user } = useAuthStore();
-  const { processScan, isAirplaneMode, tiers, sellWalkInTicket, tickets } = useDatabaseStore();
-
-  const [showWalkIn, setShowWalkIn] = useState(false);
-  const [selectedTierId, setSelectedTierId] = useState<string>('');
-  const [walkInCapacity, setWalkInCapacity] = useState('1');
+  const [loading, setLoading] = useState(false);
+  const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
   const [showPartialModal, setShowPartialModal] = useState(false);
-  const [currentQr, setCurrentQr] = useState('');
-  const [ticketCapacity, setTicketCapacity] = useState(0);
-  const [ticketUsed, setTicketUsed] = useState(0);
+  const [currentOrderId, setCurrentOrderId] = useState('');
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -32,47 +25,68 @@ export default function ScannerScreen() {
   }, [permission]);
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned) return;
+    if (scanned || loading || showPartialModal) return;
     setScanned(true);
-    setCurrentQr(data);
 
-    const ticket = tickets[data];
-    if (ticket && ticket.capacity > 1 && ticket.used < ticket.capacity) {
-      setTicketCapacity(ticket.capacity);
-      setTicketUsed(ticket.used);
+    let orderId = data;
+    // Extract orderId if it's a URL
+    if (data.includes('/api/qrs/')) {
+      const parts = data.split('/api/qrs/');
+      orderId = parts[1].split('?')[0]; // fallback to safely get ID
+    }
+
+    setCurrentOrderId(orderId);
+    await fetchOrderInfo(orderId);
+  };
+
+  const fetchOrderInfo = async (orderId: string) => {
+    setLoading(true);
+    try {
+      const info = await api.getQrInfo(orderId);
+      setOrderInfo(info);
+      
+      if (info.status !== 'paid') {
+        showFeedback('error', 'La orden no está pagada o fue rechazada.');
+        return;
+      }
+      
+      if (info.accesos_restantes <= 0) {
+        showFeedback('error', 'El ticket ya fue usado o no tiene accesos restantes.');
+        return;
+      }
+
+      // Show modal to confirm how many people are entering
       setShowPartialModal(true);
-    } else {
-      processScanTicket(data, 1);
+      
+    } catch (err: any) {
+      showFeedback('error', err.message || 'Error al obtener ticket.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const processScanTicket = async (qrCode: string, count: number) => {
+  const processScanTicket = async (count: number) => {
     setShowPartialModal(false);
-    const result = await processScan(qrCode, count);
-    
-    setFeedback(result.success ? 'success' : 'error');
-    setMessage(result.message);
-
-    if (result.success) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      const { tickets, tables, staff, sendPushNotification } = useDatabaseStore.getState();
-      const ticket = tickets[qrCode];
-      if (ticket && ticket.tableId) {
-        const table = tables.find(t => t.id === ticket.tableId);
-        if (table) {
-          const notifyTokens = staff
-            .filter(s => s.role === 'viewer1' && s.pushToken)
-            .map(s => s.pushToken!);
-          if (notifyTokens.length > 0) {
-            sendPushNotification(
-              notifyTokens, 
-              `¡Mesa ${table.name} en Puerta! 🍾`, 
-              `El cliente ${ticket.buyerName} acaba de ingresar con ${count} personas.`
-            );
-          }
-        }
+    setLoading(true);
+    try {
+      const res = await api.validateQr(currentOrderId, count);
+      if (res.success) {
+        showFeedback('success', `${count} acceso(s) confirmado(s).\nQuedan ${res.accesos_restantes}.`);
+      } else {
+        showFeedback('error', res.error || 'Error al validar.');
       }
+    } catch (err: any) {
+      showFeedback('error', err.message || 'Error de conexión.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showFeedback = (type: 'success' | 'error', text: string) => {
+    setFeedback(type);
+    setMessage(text);
+    if (type === 'success') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
@@ -80,18 +94,9 @@ export default function ScannerScreen() {
     setTimeout(() => {
       setFeedback(null);
       setScanned(false);
-    }, 2000);
-  };
-
-  const handleWalkIn = () => {
-    if (selectedTierId) {
-      sellWalkInTicket(selectedTierId, parseInt(walkInCapacity) || 1);
-      setShowWalkIn(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setFeedback('success');
-      setMessage(`Venta manual: ${walkInCapacity} pase(s)`);
-      setTimeout(() => setFeedback(null), 2000);
-    }
+      setOrderInfo(null);
+      setCurrentOrderId('');
+    }, 3000);
   };
 
   if (!permission?.granted) {
@@ -115,6 +120,7 @@ export default function ScannerScreen() {
 
       <View style={styles.targetContainer}>
         {!scanned && <View style={styles.targetBox} />}
+        {loading && <ActivityIndicator size="large" color="#eab308" style={{ marginTop: 20 }} />}
       </View>
 
       {feedback && (
@@ -124,62 +130,24 @@ export default function ScannerScreen() {
         </View>
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => setShowWalkIn(true)}>
-        <PlusCircle color="#000" size={24} />
-        <Text style={styles.fabText}>Venta Físicamente</Text>
-      </TouchableOpacity>
-
-      <Modal visible={showWalkIn} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Venta en Taquilla</Text>
-            <Text style={styles.modalDesc}>Registra el pago físico y el ingreso inmediato.</Text>
-
-            <View style={styles.tierSelector}>
-              {tiers.map(t => (
-                <TouchableOpacity 
-                  key={t.id} 
-                  style={[styles.tierBtn, selectedTierId === t.id && styles.tierBtnActive]}
-                  onPress={() => setSelectedTierId(t.id)}
-                >
-                  <Text style={[styles.tierBtnText, selectedTierId === t.id && { color: '#f4efe9' }]}>{t.name} (${t.price})</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 12 }}>
-              <Text style={{ color: '#231e1a', fontSize: 16 }}>Nº Personas:</Text>
-              <TouchableOpacity onPress={() => setWalkInCapacity(String(Math.max(1, parseInt(walkInCapacity)-1)))} style={styles.qtyBtn}>
-                <Text style={{ color: '#231e1a', fontSize: 20 }}>-</Text>
-              </TouchableOpacity>
-              <Text style={{ color: '#231e1a', fontSize: 20, fontFamily: 'NunitoSans_600SemiBold' }}>{walkInCapacity}</Text>
-              <TouchableOpacity onPress={() => setWalkInCapacity(String(parseInt(walkInCapacity)+1))} style={styles.qtyBtn}>
-                <Text style={{ color: '#231e1a', fontSize: 20 }}>+</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#f4efe9', borderWidth: 1, borderColor: '#bdb39b' }]} onPress={() => setShowWalkIn(false)}>
-                <Text style={{ color: '#686a54', fontFamily: 'NunitoSans_600SemiBold' }}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#686a54' }]} onPress={handleWalkIn}>
-                <Text style={{ color: '#f4efe9', fontFamily: 'NunitoSans_600SemiBold' }}>Confirmar Venta</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       <Modal visible={showPartialModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Users color="#eab308" size={32} />
-              <Text style={styles.modalTitle}>Grupo Detectado</Text>
+              <Text style={styles.modalTitle}>Validar Ingreso</Text>
             </View>
-            <Text style={styles.modalText}>
-              Capacidad: {ticketCapacity} | Ya ingresaron: {ticketUsed}
-            </Text>
+            
+            {orderInfo && (
+              <View style={styles.infoBox}>
+                <Text style={styles.infoName}>{orderInfo.buyer_name}</Text>
+                <Text style={styles.infoDesc}>{orderInfo.ticket_name} - {orderInfo.zone}</Text>
+                <Text style={styles.modalText}>
+                  Capacidad Total: {orderInfo.total_accesos} | Ya ingresaron: {orderInfo.total_accesos - orderInfo.accesos_restantes}
+                </Text>
+              </View>
+            )}
+
             <Text style={styles.modalHighlight}>¿Cuántos ingresan ahora?</Text>
             
             <View style={styles.numberGrid}>
@@ -188,10 +156,10 @@ export default function ScannerScreen() {
                   key={num} 
                   style={[
                     styles.numBtn,
-                    num > ticketCapacity - ticketUsed && { opacity: 0.3 }
+                    (!orderInfo || num > orderInfo.accesos_restantes) && { opacity: 0.3 }
                   ]}
-                  disabled={num > ticketCapacity - ticketUsed}
-                  onPress={() => processScanTicket(currentQr, num)}
+                  disabled={!orderInfo || num > orderInfo.accesos_restantes}
+                  onPress={() => processScanTicket(num)}
                 >
                   <Text style={styles.numText}>{num}</Text>
                 </TouchableOpacity>
@@ -203,9 +171,10 @@ export default function ScannerScreen() {
               onPress={() => {
                 setShowPartialModal(false);
                 setScanned(false);
+                setOrderInfo(null);
               }}
             >
-              <Text style={styles.cancelText}>Cancelar</Text>
+              <Text style={styles.cancelText}>Cancelar / Escanear de nuevo</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -218,9 +187,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4efe9',
-  },
-  camera: {
-    flex: 1,
   },
   targetContainer: {
     ...StyleSheet.absoluteFill,
@@ -243,36 +209,11 @@ const styles = StyleSheet.create({
   },
   feedbackText: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: 'NunitoSans_600SemiBold',
     marginTop: 16,
     textAlign: 'center',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    backgroundColor: '#686a54',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  fabText: {
-    color: '#f4efe9',
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
   },
   modalContainer: {
     flex: 1,
@@ -291,23 +232,33 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: { color: '#231e1a', fontSize: 24, fontFamily: 'NunitoSans_600SemiBold', marginBottom: 8 },
-  modalDesc: { color: '#686a54', fontSize: 14, marginBottom: 24 },
+  infoBox: {
+    backgroundColor: '#f4efe9',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+  },
+  infoName: {
+    fontSize: 18,
+    fontFamily: 'NunitoSans_700Bold',
+    color: '#231e1a',
+  },
+  infoDesc: {
+    fontSize: 14,
+    color: '#686a54',
+    marginBottom: 8,
+  },
   modalText: {
     color: '#686a54',
-    fontSize: 16,
+    fontSize: 14,
   },
   modalHighlight: {
     color: '#47311f',
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 24,
+    marginBottom: 16,
+    textAlign: 'center',
   },
-  tierSelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
-  tierBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, borderWidth: 1, borderColor: '#bdb39b', backgroundColor: '#f4efe9' },
-  tierBtnActive: { backgroundColor: '#686a54', borderColor: '#686a54' },
-  tierBtnText: { color: '#686a54', fontFamily: 'NunitoSans_600SemiBold' },
-  qtyBtn: { backgroundColor: '#f4efe9', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#bdb39b' },
-  actionBtn: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center' },
   numberGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

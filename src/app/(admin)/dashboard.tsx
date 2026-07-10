@@ -1,166 +1,93 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform } from 'react-native';
 import { Redirect } from 'expo-router';
-import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Trash2, Plus, QrCode, Edit2, Save, Send } from 'lucide-react-native';
+import { api, AdminStats } from '../../services/api';
+import { RefreshCw, Users, Ticket, DollarSign } from 'lucide-react-native';
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
   if (user?.role === 'viewer1' || user?.role === 'viewer2') return <Redirect href="/(admin)/tables" />;
   
-  const { tiers, addTier, removeTier, editTier } = useDatabaseStore();
-  const [newTierName, setNewTierName] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [newCapacity, setNewCapacity] = useState('100');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  
-  const [broadcastTitle, setBroadcastTitle] = useState('');
-  const [broadcastBody, setBroadcastBody] = useState('');
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  const handleAddOrEdit = () => {
-    if (newTierName.trim() !== '' && newPrice.trim() !== '') {
-      if (editingId) {
-        editTier(editingId, newTierName, parseFloat(newPrice) || 0, parseInt(newCapacity) || 100);
-        setEditingId(null);
-      } else {
-        addTier(newTierName, parseFloat(newPrice) || 0, parseInt(newCapacity) || 100);
-      }
-      setNewTierName('');
-      setNewPrice('');
-      setNewCapacity('100');
+  const loadStats = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await api.getAdminStats();
+      setStats(data);
+    } catch (err: any) {
+      setError(err.message || 'Error cargando estadísticas');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+    // Auto-refresh every 15 seconds
+    const interval = setInterval(loadStats, 15000);
+    return () => clearInterval(interval);
+  }, [loadStats]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadStats();
   };
 
-  const startEdit = (tier: any) => {
-    setEditingId(tier.id);
-    setNewTierName(tier.name);
-    setNewPrice(tier.price.toString());
-    setNewCapacity(tier.capacity.toString());
-    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-  };
-
-  const handleBroadcast = async () => {
-    if (!broadcastTitle || !broadcastBody) return;
-    const { staff, sendPushNotification } = useDatabaseStore.getState();
-    const tokens = staff.map(s => s.pushToken).filter(t => t) as string[];
-    if (tokens.length > 0) {
-      await sendPushNotification(tokens, broadcastTitle, broadcastBody);
-      Alert.alert('Éxito', 'Notificación enviada a ' + tokens.length + ' dispositivo(s)!');
-    } else {
-      Alert.alert('Aviso', 'No hay personal con notificaciones activas en este momento.');
-    }
-    setBroadcastTitle('');
-    setBroadcastBody('');
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount);
   };
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView 
+      style={styles.container} 
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#231e1a" />}
+    >
       <View style={styles.content}>
-        <Text style={styles.title}>{editingId ? 'Editando Etapa' : 'Crear Etapa de Venta (Tier)'}</Text>
-        
-        <View style={styles.form}>
-          <TextInput 
-            style={styles.input} 
-            placeholder="Nombre (Ej. Preventa 1)" 
-            placeholderTextColor="#bdb39b" 
-            value={newTierName} 
-            onChangeText={setNewTierName} 
-          />
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Precio $" 
-                placeholderTextColor="#bdb39b" 
-                keyboardType="numeric" 
-                value={newPrice} 
-                onChangeText={setNewPrice} 
-              />
-            </View>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Aforo" 
-                placeholderTextColor="#bdb39b" 
-                keyboardType="numeric" 
-                value={newCapacity} 
-                onChangeText={setNewCapacity} 
-              />
-            </View>
-            <TouchableOpacity style={[styles.addBtn, editingId && { backgroundColor: '#47311f' }]} onPress={handleAddOrEdit}>
-              {editingId ? <Save color="#f4efe9" size={24} /> : <Plus color="#f4efe9" size={24} />}
-            </TouchableOpacity>
-          </View>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Panel General</Text>
+          <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
+            <RefreshCw color="#231e1a" size={20} />
+          </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Etapas Existentes ({tiers.length})</Text>
-
-        {tiers.map(item => (
-          <View key={item.id} style={styles.card}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.tableName}>{item.name}</Text>
-              <Text style={styles.tableMeta}>Precio: ${item.price} | Aforo Límite: {item.capacity} personas</Text>
+        {loading && !stats ? (
+          <Text style={styles.infoText}>Cargando datos en tiempo real...</Text>
+        ) : error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : stats ? (
+          <View style={styles.statsGrid}>
+            <View style={[styles.statCard, { backgroundColor: '#47311f' }]}>
+              <DollarSign color="#f4efe9" size={32} style={styles.statIcon} />
+              <Text style={styles.statLabelLight}>Ingresos Totales</Text>
+              <Text style={styles.statValueLight}>{formatCurrency(stats.totalRevenue)}</Text>
             </View>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity onPress={() => startEdit(item)} style={[styles.deleteBtn, { backgroundColor: '#686a54' }]}>
-                <Edit2 color="#f4efe9" size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => removeTier(item.id)} style={[styles.deleteBtn, { backgroundColor: '#47311f' }]}>
-                <Trash2 color="#f4efe9" size={20} />
-              </TouchableOpacity>
+
+            <View style={[styles.statCard, { backgroundColor: '#686a54' }]}>
+              <Ticket color="#f4efe9" size={32} style={styles.statIcon} />
+              <Text style={styles.statLabelLight}>Boletas Vendidas</Text>
+              <Text style={styles.statValueLight}>{stats.totalSold} / {stats.totalCapacity}</Text>
+            </View>
+
+            <View style={[styles.statCard, { backgroundColor: '#d9d1c0' }]}>
+              <Users color="#231e1a" size={32} style={styles.statIcon} />
+              <Text style={styles.statLabelDark}>Check-ins (Gente que ingresó)</Text>
+              <Text style={styles.statValueDark}>{stats.totalCheckIns}</Text>
             </View>
           </View>
-        ))}
+        ) : null}
 
-        <View style={[styles.mockSection, { marginTop: 10, borderTopWidth: 0 }]}>
-          <Text style={styles.title}>Centro de Comunicaciones</Text>
-          <View style={styles.form}>
-            <TextInput 
-              style={styles.input} 
-              placeholder="Título (Ej. Atención Porteros)" 
-              placeholderTextColor="#bdb39b" 
-              value={broadcastTitle} 
-              onChangeText={setBroadcastTitle} 
-            />
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Mensaje a transmitir..." 
-                  placeholderTextColor="#bdb39b" 
-                  value={broadcastBody} 
-                  onChangeText={setBroadcastBody} 
-                />
-              </View>
-              <TouchableOpacity style={styles.addBtn} onPress={handleBroadcast}>
-                <Send color="#f4efe9" size={24} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.mockSection}>
-          <Text style={styles.title}>Códigos de Prueba</Text>
-          <Text style={styles.tableMeta}>Usa estos códigos para apuntar con la cámara del teléfono del portero.</Text>
-          
-          <View style={styles.qrRow}>
-            <View style={styles.qrItem}>
-              <Image source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tick_group_1' }} style={{ width: 100, height: 100, marginBottom: 8 }} />
-              <Text style={styles.qrText}>tick_group_1</Text>
-            </View>
-            <View style={styles.qrItem}>
-              <Image source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tick_single_1' }} style={{ width: 100, height: 100, marginBottom: 8 }} />
-              <Text style={styles.qrText}>tick_single_1</Text>
-            </View>
-            <View style={styles.qrItem}>
-              <Image source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=tick_vip_1' }} style={{ width: 100, height: 100, marginBottom: 8 }} />
-              <Text style={styles.qrText}>tick_vip_1</Text>
-            </View>
-          </View>
-        </View>
       </View>
     </ScrollView>
   );
@@ -174,88 +101,78 @@ const styles = StyleSheet.create({
   content: {
     padding: 24,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    marginTop: 8,
+  },
   title: {
     color: '#231e1a',
-    fontSize: 18,
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 16,
-    marginTop: 8,
+    fontSize: 22,
+    fontFamily: 'NunitoSans_700Bold',
     textTransform: 'uppercase',
   },
-  form: {
-    flexDirection: 'column',
-    gap: 12,
-    marginBottom: 32,
-  },
-  input: {
-    backgroundColor: '#d9d1c0',
-    borderWidth: 1,
-    borderColor: '#bdb39b',
-    borderRadius: 8,
-    color: '#231e1a',
-    paddingHorizontal: 8,
-    height: 50,
-    fontFamily: 'NunitoSans_400Regular',
-  },
-  addBtn: {
-    backgroundColor: '#686a54',
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#bdb39b',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  tableName: {
-    color: '#231e1a',
-    fontSize: 16,
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 4,
-  },
-  tableMeta: {
-    color: '#686a54',
-    fontSize: 12,
-  },
-  deleteBtn: {
+  refreshBtn: {
     padding: 8,
     borderRadius: 8,
+    backgroundColor: '#d9d1c0',
   },
-  mockSection: {
-    marginTop: 40,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderColor: '#bdb39b',
+  infoText: {
+    color: '#686a54',
+    fontSize: 16,
+    fontFamily: 'NunitoSans_400Regular',
   },
-  qrRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    marginBottom: 40,
-  },
-  qrItem: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+  errorBox: {
+    backgroundColor: '#ffdbdb',
     padding: 16,
     borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 4,
     borderWidth: 1,
-    borderColor: '#bdb39b',
+    borderColor: '#ff4d4d',
   },
-  qrText: {
-    color: '#686a54',
-    fontSize: 10,
-    marginTop: 8,
+  errorText: {
+    color: '#ff4d4d',
     fontFamily: 'NunitoSans_600SemiBold',
-  }
+  },
+  statsGrid: {
+    flexDirection: 'column',
+    gap: 16,
+  },
+  statCard: {
+    borderRadius: 16,
+    padding: 24,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  statIcon: {
+    position: 'absolute',
+    right: 24,
+    top: 24,
+    opacity: 0.2,
+  },
+  statLabelLight: {
+    color: '#f4efe9',
+    opacity: 0.8,
+    fontSize: 14,
+    fontFamily: 'NunitoSans_600SemiBold',
+    marginBottom: 8,
+  },
+  statValueLight: {
+    color: '#f4efe9',
+    fontSize: 32,
+    fontFamily: 'NunitoSans_700Bold',
+  },
+  statLabelDark: {
+    color: '#231e1a',
+    opacity: 0.8,
+    fontSize: 14,
+    fontFamily: 'NunitoSans_600SemiBold',
+    marginBottom: 8,
+  },
+  statValueDark: {
+    color: '#231e1a',
+    fontSize: 32,
+    fontFamily: 'NunitoSans_700Bold',
+  },
 });

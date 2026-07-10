@@ -13,10 +13,10 @@ import {
 import { useRouter } from 'expo-router';
 import { User, Lock, ArrowRight, Fingerprint } from 'lucide-react-native';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useDatabaseStore } from '../../store/useDatabaseStore';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { User as UserType } from '../../types';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { api } from '../../services/api';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -65,28 +65,21 @@ export default function LoginScreen() {
     setLoading(true);
     setError('');
     
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    const { staff } = useDatabaseStore.getState();
-    let validUser: UserType | null = null;
-
-    if (usr === 'admin' && pin === '123') {
-      validUser = { id: 'admin_1', name: 'Administrador', role: 'admin' };
-    } else {
-      const member = staff.find(s => s.username === usr && s.pin === pin && s.isActive);
-      if (member) {
-        validUser = { id: member.id, name: member.name, role: member.role };
-      }
-    }
-    
-    setLoading(false);
-    
-    if (!validUser) {
-      setError('Credenciales incorrectas o acceso revocado.');
-    } else {
-      useDatabaseStore.getState().updateStaffPushToken(validUser.id, expoPushToken?.data);
-      await login(validUser, 'mock_token_123', expoPushToken?.data);
+    try {
+      const result = await api.login(usr, pin);
+      const validUser: UserType = {
+        id: result.user.id,
+        name: result.user.username,
+        role: result.user.role
+      };
+      
+      await login(validUser, result.token, expoPushToken?.data);
       // The useEffect will catch the user state change and redirect
+      
+    } catch (err: any) {
+      setError(err.message || 'Credenciales incorrectas o acceso revocado.');
+    } finally {
+      setLoading(false);
     }
   };
 
