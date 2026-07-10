@@ -17,18 +17,18 @@ export interface StaffMember {
   pushToken?: string;
 }
 
-export interface ProductPrice {
+export interface Product {
   id: string; // e.g., 'early', 'b_vip', 't_diamante'
   name: string; // e.g., 'Early Bird', 'Cama VIP'
   type: 'ticket' | 'bed' | 'table';
-  price: number;
+  basePrice: number;
 }
 
 export interface Tier {
   id: string;
   name: string;
   endDate: string;
-  prices: ProductPrice[];
+  priceOverrides: Record<string, number>;
 }
 
 export interface Ticket {

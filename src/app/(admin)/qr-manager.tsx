@@ -8,7 +8,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Ticket } from '../../types';
 
 export default function QRManagerScreen() {
-  const { tickets, tiers, tables, adminCreateTicket, editTicket, getActiveTier } = useDatabaseStore();
+  const { tickets, tiers, tables, adminCreateTicket, editTicket, getActiveTier, getFusedProductsForActiveTier } = useDatabaseStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const { user } = useAuthStore();
@@ -27,7 +27,7 @@ export default function QRManagerScreen() {
   const ticketsArr = Object.values(tickets || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   
   const activeTier = getActiveTier();
-  const availableProducts = activeTier ? activeTier.prices : [];
+  const availableProducts = getFusedProductsForActiveTier();
 
   const handleCreate = () => {
     if (!buyerName || !capacity || !selectedType) {
@@ -122,7 +122,7 @@ export default function QRManagerScreen() {
               <View style={styles.ticketInfo}>
                 <Text style={styles.ticketName}>{ticket.buyerName}</Text>
                 <Text style={styles.ticketMeta}>Teléfono: {ticket.phone || 'N/A'}</Text>
-                <Text style={styles.ticketMeta}>Tipo: {activeTier?.prices.find(p => p.id === ticket.ticketType)?.name || ticket.ticketType?.toUpperCase()}</Text>
+                <Text style={styles.ticketMeta}>Tipo: {availableProducts.find(p => p.id === ticket.ticketType)?.name || ticket.ticketType?.toUpperCase()}</Text>
                 <Text style={styles.ticketMeta}>Etapa de compra: {getTierName(ticket.tierId)}</Text>
                 <Text style={styles.ticketMeta}>Mesa: {ticket.tableId ? getTableName(ticket.tableId) : 'Ninguna'}</Text>
                 <Text style={styles.ticketMeta}>Aforo: {ticket.capacity}</Text>
@@ -217,7 +217,7 @@ export default function QRManagerScreen() {
             {selectedTicket && (
               <>
                 <Text style={styles.qrModalTitle}>{selectedTicket.buyerName}</Text>
-                <Text style={styles.qrModalSub}>{selectedTicket.capacity} Personas - {activeTier?.prices.find(p => p.id === selectedTicket.ticketType)?.name || selectedTicket.ticketType?.toUpperCase()}</Text>
+                <Text style={styles.qrModalSub}>{selectedTicket.capacity} Personas - {availableProducts.find(p => p.id === selectedTicket.ticketType)?.name || selectedTicket.ticketType?.toUpperCase()}</Text>
                 
                 <Image 
                   source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}` }} 

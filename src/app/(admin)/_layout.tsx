@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs, Redirect } from 'expo-router';
 import { Settings, Grid, LogOut, FileBarChart, Users, Scan, QrCode, Map } from 'lucide-react-native';
 import { TouchableOpacity } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -9,9 +9,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function AdminLayout() {
   const { logout, user } = useAuthStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
-  const isViewer = user?.role === 'viewer';
   const insets = useSafeAreaInsets();
   
+  if (!user) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
+  const isViewer = user?.role === 'viewer';
   return (
     <>
       <Tabs
@@ -82,14 +86,6 @@ export default function AdminLayout() {
             href: isViewer ? null : '/(admin)/qr-manager',
             title: 'Gestor QR',
             tabBarIcon: ({ color }) => <QrCode color={color} size={24} />,
-          }}
-        />
-        <Tabs.Screen
-          name="map"
-          options={{
-            href: isViewer ? null : '/(admin)/map',
-            title: 'Mapa',
-            tabBarIcon: ({ color }) => <Map color={color} size={24} />,
           }}
         />
       </Tabs>

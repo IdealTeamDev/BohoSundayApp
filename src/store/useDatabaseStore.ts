@@ -15,24 +15,26 @@ const mockTickets: Record<string, Ticket> = {
   'tick_vip_1': { id: 't_3', qrCode: 'tick_vip_1', buyerName: 'Carlos P.', capacity: 15, used: 0, tableId: 't5', ticketType: 'bed', tierId: 'tier_2', status: 'valid' },
 };
 
+const mockProducts: import('../types').Product[] = [
+  { id: 'early', name: 'Early Bird', type: 'ticket', basePrice: 40 },
+  { id: 'general', name: 'General', type: 'ticket', basePrice: 50 },
+  { id: 'bed_vip', name: 'Cama VIP', type: 'bed', basePrice: 120 },
+  { id: 'table_std', name: 'Mesa Estandar', type: 'table', basePrice: 60 },
+];
+
 const mockTiers: Tier[] = [
   { 
     id: 'tier_1', name: 'Preventa 1', endDate: '2026-07-20T23:59:59.000Z', 
-    prices: [
-      { id: 'early', name: 'Early Bird', type: 'ticket', price: 25 },
-      { id: 'general', name: 'General', type: 'ticket', price: 40 },
-      { id: 'bed_vip', name: 'Cama VIP', type: 'bed', price: 100 },
-      { id: 'table_std', name: 'Mesa Estandar', type: 'table', price: 50 },
-    ]
+    priceOverrides: {
+      'early': 25,
+      'general': 40,
+      'bed_vip': 100,
+      'table_std': 50
+    }
   },
   { 
     id: 'tier_2', name: 'General', endDate: '2026-08-01T23:59:59.000Z', 
-    prices: [
-      { id: 'early', name: 'Early Bird', type: 'ticket', price: 30 },
-      { id: 'general', name: 'General', type: 'ticket', price: 50 },
-      { id: 'bed_vip', name: 'Cama VIP', type: 'bed', price: 120 },
-      { id: 'table_std', name: 'Mesa Estandar', type: 'table', price: 60 },
-    ]
+    priceOverrides: {} // Uses all base prices
   },
 ];
 
@@ -44,6 +46,7 @@ const mockStaff: StaffMember[] = [
 interface DatabaseState {
   tables: Table[];
   tickets: Record<string, Ticket>;
+  products: import('../types').Product[];
   tiers: Tier[];
   staff: StaffMember[];
 
@@ -57,13 +60,18 @@ interface DatabaseState {
   registerSession: (userId: string, deviceId: string) => void;
   checkSessionValidity: (userId: string, deviceId: string) => boolean;
 
+  // Products Catalog
+  addProduct: (name: string, type: 'ticket' | 'bed' | 'table', basePrice: number) => void;
+  removeProduct: (id: string) => void;
+
   // Admin functions
   addTable: (name: string, capacity: number, price?: number) => void;
   removeTable: (id: string) => void;
-  addTier: (name: string, endDate: string, prices: import('../types').ProductPrice[]) => void;
+  addTier: (name: string, endDate: string, priceOverrides: Record<string, number>) => void;
   removeTier: (id: string) => void;
-  editTier: (id: string, name: string, endDate: string, prices: import('../types').ProductPrice[]) => void;
+  editTier: (id: string, name: string, endDate: string, priceOverrides: Record<string, number>) => void;
   adminCreateTicket: (buyerName: string, phone: string, ticketType: string, capacity: number, tableId?: string) => void;
+  revokeTableReservation: (tableId: string) => void;
 
   // Staff functions
   addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer') => void;
@@ -75,6 +83,7 @@ interface DatabaseState {
 
   // Active Stage
   getActiveTier: () => Tier | undefined;
+  getFusedProductsForActiveTier: () => (import('../types').Product & { currentPrice: number })[];
 
   // Ticket management
   editTicket: (id: string, phone: string) => void;
@@ -87,6 +96,7 @@ interface DatabaseState {
 export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   tables: mockTables,
   tickets: mockTickets,
+  products: mockProducts,
   tiers: mockTiers,
   staff: mockStaff,
   isAirplaneMode: false,
@@ -181,9 +191,18 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set((state) => ({ tables: state.tables.filter(t => t.id !== id) }));
   },
 
-  addTier: (name, endDate, prices) => {
+  addProduct: (name, type, basePrice) => {
+    const newId = `${type.substring(0, 1)}_${Date.now()}`;
+    set((state) => ({ products: [...state.products, { id: newId, name, type, basePrice }] }));
+  },
+
+  removeProduct: (id) => {
+    set((state) => ({ products: state.products.filter(p => p.id !== id) }));
+  },
+
+  addTier: (name, endDate, priceOverrides) => {
     const newId = `tier_${Date.now()}`;
-    const newTier: Tier = { id: newId, name, endDate, prices };
+    const newTier: Tier = { id: newId, name, endDate, priceOverrides };
     set((state) => ({ tiers: [...state.tiers, newTier] }));
   },
 
@@ -191,9 +210,9 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set((state) => ({ tiers: state.tiers.filter(t => t.id !== id) }));
   },
 
-  editTier: (id, name, endDate, prices) => {
+  editTier: (id, name, endDate, priceOverrides) => {
     set((state) => ({
-      tiers: state.tiers.map(t => t.id === id ? { ...t, name, endDate, prices } : t)
+      tiers: state.tiers.map(t => t.id === id ? { ...t, name, endDate, priceOverrides } : t)
     }));
   },
 
@@ -212,7 +231,41 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       status: 'valid',
       createdAt: Date.now()
     };
-    set(state => ({ tickets: { ...state.tickets, [newId]: newTicket } }));
+    
+    set(state => {
+      const newTickets = { ...state.tickets, [newId]: newTicket };
+      let newTables = [...state.tables];
+      
+      if (tableId) {
+        newTables = newTables.map(t => 
+          t.id === tableId ? { ...t, status: 'reserved', ticketId: newId } : t
+        );
+      }
+      
+      return { tickets: newTickets, tables: newTables };
+    });
+  },
+
+  revokeTableReservation: (tableId) => {
+    set(state => {
+      const table = state.tables.find(t => t.id === tableId);
+      if (!table || !table.ticketId) return state;
+
+      const ticketId = table.ticketId;
+      const ticket = state.tickets[ticketId];
+      
+      let newTickets = { ...state.tickets };
+      if (ticket) {
+        // Remove table association and mark ticket as invalid to prevent use
+        newTickets[ticketId] = { ...ticket, tableId: undefined, status: 'invalid' };
+      }
+
+      const newTables = state.tables.map(t => 
+        t.id === tableId ? { ...t, status: 'available' as const, ticketId: undefined } : t
+      );
+
+      return { tickets: newTickets, tables: newTables };
+    });
   },
 
   addStaff: (name, username, pin, role) => {
@@ -248,9 +301,19 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   getActiveTier: () => {
     const { tiers } = get();
     const now = new Date().getTime();
-    // Sort tiers by endDate, find the first one that hasn't expired yet
     const sorted = [...tiers].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
-    return sorted.find(t => new Date(t.endDate).getTime() > now) || sorted[sorted.length - 1]; // Return active or the last one
+    return sorted.find(t => new Date(t.endDate).getTime() > now) || sorted[sorted.length - 1];
+  },
+
+  getFusedProductsForActiveTier: () => {
+    const tier = get().getActiveTier();
+    const products = get().products;
+    if (!tier) return products.map(p => ({ ...p, currentPrice: p.basePrice }));
+    
+    return products.map(p => ({
+      ...p,
+      currentPrice: tier.priceOverrides[p.id] !== undefined ? tier.priceOverrides[p.id] : p.basePrice
+    }));
   },
 
   editTicket: (id, phone) => {

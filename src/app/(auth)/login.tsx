@@ -156,9 +156,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.footer} onPress={() => router.push('/(admin)/dashboard')}>
-          <Text style={styles.footerText}>Abrir Panel de Generación de QR (Test)</Text>
-        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -240,13 +237,5 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 14,
     textAlign: 'center',
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  footerText: {
-    color: '#686a54',
-    fontSize: 12,
   }
 });

@@ -113,5 +113,16 @@ export const api = {
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Error al eliminar staff');
     return json;
+  },
+
+  updateStaffPin: async (id: string, pin: string) => {
+    const res = await fetch(`${API_URL}/admin/staff`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ id, pin })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al actualizar PIN');
+    return json;
   }
 };
