@@ -16,33 +16,47 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form State for Tiers
+  // Form State for Tiers (Event Stages)
   const [newTierName, setNewTierName] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [newCapacity, setNewCapacity] = useState('100');
+  const [newEndDate, setNewEndDate] = useState(''); // e.g. YYYY-MM-DD
+  const [newPriceEarly, setNewPriceEarly] = useState('');
+  const [newPriceGeneral, setNewPriceGeneral] = useState('');
+  const [newPriceBed, setNewPriceBed] = useState('');
+  const [newPriceTable, setNewPriceTable] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleAddOrEdit = () => {
-    if (newTierName.trim() !== '' && newPrice.trim() !== '') {
+    if (newTierName.trim() !== '') {
+      const endDate = newEndDate || new Date(Date.now() + 86400000).toISOString();
+      const pE = parseFloat(newPriceEarly) || 0;
+      const pG = parseFloat(newPriceGeneral) || 0;
+      const pB = parseFloat(newPriceBed) || 0;
+      const pT = parseFloat(newPriceTable) || 0;
+
       if (editingId) {
-        editTier(editingId, newTierName, parseFloat(newPrice) || 0, parseInt(newCapacity) || 100);
+        editTier(editingId, newTierName, endDate, pE, pG, pB, pT);
         setEditingId(null);
       } else {
-        addTier(newTierName, parseFloat(newPrice) || 0, parseInt(newCapacity) || 100);
+        addTier(newTierName, endDate, pE, pG, pB, pT);
       }
       setNewTierName('');
-      setNewPrice('');
-      setNewCapacity('100');
+      setNewEndDate('');
+      setNewPriceEarly('');
+      setNewPriceGeneral('');
+      setNewPriceBed('');
+      setNewPriceTable('');
     }
   };
 
   const startEdit = (tier: any) => {
     setEditingId(tier.id);
     setNewTierName(tier.name);
-    setNewPrice(tier.price.toString());
-    setNewCapacity(tier.capacity.toString());
-    // Optionally scroll down
+    setNewEndDate(tier.endDate);
+    setNewPriceEarly(tier.priceEarly.toString());
+    setNewPriceGeneral(tier.priceGeneral.toString());
+    setNewPriceBed(tier.priceBed.toString());
+    setNewPriceTable(tier.priceTable.toString());
   };
 
   const loadStats = useCallback(async () => {
@@ -128,32 +142,26 @@ export default function AdminDashboard() {
           <View style={styles.form}>
             <TextInput 
               style={styles.input} 
-              placeholder="Nombre (Ej. Preventa 1)" 
+              placeholder="Nombre de la Etapa (Ej. Preventa 1)" 
               placeholderTextColor="#bdb39b" 
               value={newTierName} 
               onChangeText={setNewTierName} 
             />
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Precio $" 
-                  placeholderTextColor="#bdb39b" 
-                  keyboardType="numeric" 
-                  value={newPrice} 
-                  onChangeText={setNewPrice} 
-                />
-              </View>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Aforo" 
-                  placeholderTextColor="#bdb39b" 
-                  keyboardType="numeric" 
-                  value={newCapacity} 
-                  onChangeText={setNewCapacity} 
-                />
-              </View>
+            <TextInput 
+              style={styles.input} 
+              placeholder="Fecha Cierre (Ej. 2026-07-20T23:59:00Z)" 
+              placeholderTextColor="#bdb39b" 
+              value={newEndDate} 
+              onChangeText={setNewEndDate} 
+            />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TextInput style={[styles.input, { flex: 1 }]} placeholder="Early $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceEarly} onChangeText={setNewPriceEarly} />
+              <TextInput style={[styles.input, { flex: 1 }]} placeholder="General $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceGeneral} onChangeText={setNewPriceGeneral} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Camas VIP $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceBed} onChangeText={setNewPriceBed} />
+              <TextInput style={[styles.input, { flex: 1, marginBottom: 0 }]} placeholder="Mesas $" placeholderTextColor="#bdb39b" keyboardType="numeric" value={newPriceTable} onChangeText={setNewPriceTable} />
+              
               <TouchableOpacity style={[styles.addBtn, editingId && { backgroundColor: '#47311f' }]} onPress={handleAddOrEdit}>
                 {editingId ? <Save color="#f4efe9" size={24} /> : <Plus color="#f4efe9" size={24} />}
               </TouchableOpacity>
@@ -166,7 +174,9 @@ export default function AdminDashboard() {
             <View key={item.id} style={styles.card}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.tableName}>{item.name}</Text>
-                <Text style={styles.tableMeta}>Precio: ${item.price} | Aforo Límite: {item.capacity}</Text>
+                <Text style={styles.tableMeta}>Early: ${item.priceEarly} | General: ${item.priceGeneral}</Text>
+                <Text style={styles.tableMeta}>Cama: ${item.priceBed} | Mesa: ${item.priceTable}</Text>
+                <Text style={[styles.tableMeta, { marginTop: 4, color: '#47311f' }]}>Cierra: {new Date(item.endDate).toLocaleString()}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity onPress={() => startEdit(item)} style={[styles.deleteBtn, { backgroundColor: '#686a54' }]}>

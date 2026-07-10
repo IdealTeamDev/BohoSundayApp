@@ -20,8 +20,11 @@ export interface StaffMember {
 export interface Tier {
   id: string;
   name: string;
-  price: number;
-  capacity: number;
+  endDate: string;
+  priceEarly: number;
+  priceGeneral: number;
+  priceBed: number;
+  priceTable: number;
 }
 
 export interface Ticket {
@@ -33,7 +36,8 @@ export interface Ticket {
   used: number;
   zoneId?: string;
   tableId?: string;
-  tierId?: string;
+  ticketType: 'early' | 'general' | 'bed' | 'table';
+  tierId?: string; // The stage when it was bought
   status: 'valid' | 'used' | 'invalid';
   createdAt?: number;
 }

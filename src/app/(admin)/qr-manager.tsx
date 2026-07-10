@@ -18,24 +18,24 @@ export default function QRManagerScreen() {
   const [buyerName, setBuyerName] = useState('');
   const [phone, setPhone] = useState('');
   const [capacity, setCapacity] = useState('1');
-  const [selectedTier, setSelectedTier] = useState('');
+  const [selectedType, setSelectedType] = useState<'early'|'general'|'bed'|'table'|''>('');
   const [selectedTable, setSelectedTable] = useState('');
 
   const ticketsArr = Object.values(tickets || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   const handleCreate = () => {
-    if (!buyerName || !capacity || !selectedTier) {
-      Alert.alert('Error', 'Por favor llena los campos obligatorios (Nombre, Capacidad, Etapa).');
+    if (!buyerName || !capacity || !selectedType) {
+      Alert.alert('Error', 'Por favor llena los campos obligatorios (Nombre, Capacidad, Tipo).');
       return;
     }
     
-    adminCreateTicket(buyerName, phone, selectedTier, parseInt(capacity), selectedTable || undefined);
+    adminCreateTicket(buyerName, phone, selectedType as any, parseInt(capacity), selectedTable || undefined);
     
     // Reset
     setBuyerName('');
     setPhone('');
     setCapacity('1');
-    setSelectedTier('');
+    setSelectedType('');
     setSelectedTable('');
     setModalVisible(false);
   };
@@ -81,7 +81,8 @@ export default function QRManagerScreen() {
               <View style={styles.ticketInfo}>
                 <Text style={styles.ticketName}>{ticket.buyerName}</Text>
                 <Text style={styles.ticketMeta}>Teléfono: {ticket.phone || 'N/A'}</Text>
-                <Text style={styles.ticketMeta}>Etapa: {getTierName(ticket.tierId)}</Text>
+                <Text style={styles.ticketMeta}>Tipo: {ticket.ticketType?.toUpperCase()}</Text>
+                <Text style={styles.ticketMeta}>Etapa de compra: {getTierName(ticket.tierId)}</Text>
                 <Text style={styles.ticketMeta}>Mesa: {ticket.tableId ? getTableName(ticket.tableId) : 'Ninguna'}</Text>
                 <Text style={styles.ticketMeta}>Aforo: {ticket.capacity}</Text>
               </View>
@@ -123,15 +124,20 @@ export default function QRManagerScreen() {
               <Text style={styles.label}>Cantidad de Personas *</Text>
               <TextInput style={styles.input} value={capacity} onChangeText={setCapacity} placeholder="1" keyboardType="numeric" />
 
-              <Text style={styles.label}>Etapa (Tier) *</Text>
+              <Text style={styles.label}>Tipo de Boleto / Producto *</Text>
               <View style={styles.pickerContainer}>
-                {tiers.map(t => (
+                {[
+                  { id: 'early', name: 'Early' },
+                  { id: 'general', name: 'General' },
+                  { id: 'bed', name: 'Cama VIP' },
+                  { id: 'table', name: 'Mesa' }
+                ].map(t => (
                   <TouchableOpacity 
                     key={t.id} 
-                    style={[styles.pickerItem, selectedTier === t.id && styles.pickerItemActive]}
-                    onPress={() => setSelectedTier(t.id)}
+                    style={[styles.pickerItem, selectedType === t.id && styles.pickerItemActive]}
+                    onPress={() => setSelectedType(t.id as any)}
                   >
-                    <Text style={[styles.pickerItemText, selectedTier === t.id && styles.pickerItemTextActive]}>{t.name}</Text>
+                    <Text style={[styles.pickerItemText, selectedType === t.id && styles.pickerItemTextActive]}>{t.name}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -174,7 +180,7 @@ export default function QRManagerScreen() {
             {selectedTicket && (
               <>
                 <Text style={styles.qrModalTitle}>{selectedTicket.buyerName}</Text>
-                <Text style={styles.qrModalSub}>{selectedTicket.capacity} Personas - {getTierName(selectedTicket.tierId)}</Text>
+                <Text style={styles.qrModalSub}>{selectedTicket.capacity} Personas - {selectedTicket.ticketType?.toUpperCase()}</Text>
                 
                 <Image 
                   source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}` }} 

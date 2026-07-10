@@ -16,8 +16,8 @@ const mockTickets: Record<string, Ticket> = {
 };
 
 const mockTiers: Tier[] = [
-  { id: 'tier_1', name: 'Preventa 1', price: 25, capacity: 100 },
-  { id: 'tier_2', name: 'General', price: 40, capacity: 300 },
+  { id: 'tier_1', name: 'Preventa 1', endDate: '2026-07-20T23:59:59.000Z', priceEarly: 25, priceGeneral: 40, priceBed: 100, priceTable: 50 },
+  { id: 'tier_2', name: 'General', endDate: '2026-08-01T23:59:59.000Z', priceEarly: 30, priceGeneral: 50, priceBed: 120, priceTable: 60 },
 ];
 
 const mockStaff: StaffMember[] = [
@@ -45,10 +45,10 @@ interface DatabaseState {
   // Admin functions
   addTable: (name: string, capacity: number, price?: number) => void;
   removeTable: (id: string) => void;
-  addTier: (name: string, price: number, capacity: number) => void;
+  addTier: (name: string, endDate: string, priceEarly: number, priceGeneral: number, priceBed: number, priceTable: number) => void;
   removeTier: (id: string) => void;
-  editTier: (id: string, name: string, price: number, capacity: number) => void;
-  adminCreateTicket: (buyerName: string, phone: string, tierId: string, capacity: number, tableId?: string) => void;
+  editTier: (id: string, name: string, endDate: string, priceEarly: number, priceGeneral: number, priceBed: number, priceTable: number) => void;
+  adminCreateTicket: (buyerName: string, phone: string, ticketType: 'early'|'general'|'bed'|'table', capacity: number, tableId?: string) => void;
   
   // Staff functions
   addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer1' | 'viewer2') => void;
@@ -58,6 +58,9 @@ interface DatabaseState {
   // Walk-ins
   sellWalkInTicket: (tierId: string, capacity: number) => void;
 
+  // Active Stage
+  getActiveTier: () => Tier | undefined;
+  
   // Push Notifications
   updateStaffPushToken: (id: string, pushToken?: string) => void;
   sendPushNotification: (tokens: string[], title: string, body: string) => Promise<void>;
@@ -160,9 +163,9 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set((state) => ({ tables: state.tables.filter(t => t.id !== id) }));
   },
 
-  addTier: (name, price, capacity) => {
+  addTier: (name, endDate, priceEarly, priceGeneral, priceBed, priceTable) => {
     const newId = `tier_${Date.now()}`;
-    const newTier: Tier = { id: newId, name, price, capacity };
+    const newTier: Tier = { id: newId, name, endDate, priceEarly, priceGeneral, priceBed, priceTable };
     set((state) => ({ tiers: [...state.tiers, newTier] }));
   },
 
@@ -170,13 +173,13 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     set((state) => ({ tiers: state.tiers.filter(t => t.id !== id) }));
   },
 
-  editTier: (id, name, price, capacity) => {
+  editTier: (id, name, endDate, priceEarly, priceGeneral, priceBed, priceTable) => {
     set((state) => ({
-      tiers: state.tiers.map(t => t.id === id ? { ...t, name, price, capacity } : t)
+      tiers: state.tiers.map(t => t.id === id ? { ...t, name, endDate, priceEarly, priceGeneral, priceBed, priceTable } : t)
     }));
   },
 
-  adminCreateTicket: (buyerName, phone, tierId, capacity, tableId) => {
+  adminCreateTicket: (buyerName, phone, ticketType, capacity, tableId) => {
     const newId = `qr_${Date.now()}`;
     const newTicket: Ticket = {
       id: newId,
@@ -185,7 +188,8 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       phone,
       capacity,
       used: 0,
-      tierId,
+      ticketType,
+      tierId: get().tiers[0]?.id, // Ideally the active tier ID
       tableId,
       status: 'valid',
       createdAt: Date.now()
@@ -220,6 +224,14 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       status: 'used'
     };
     set(state => ({ tickets: { ...state.tickets, [newId]: newTicket } }));
+  },
+
+  getActiveTier: () => {
+    const { tiers } = get();
+    const now = new Date().getTime();
+    // Sort tiers by endDate, find the first one that hasn't expired yet
+    const sorted = [...tiers].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
+    return sorted.find(t => new Date(t.endDate).getTime() > now) || sorted[sorted.length - 1]; // Return active or the last one
   },
 
   updateStaffPushToken: (id, pushToken) => {
