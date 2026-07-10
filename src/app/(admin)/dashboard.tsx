@@ -1,18 +1,49 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, TextInput } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { api, AdminStats } from '../../services/api';
-import { RefreshCw, Users, Ticket, DollarSign } from 'lucide-react-native';
+import { RefreshCw, Users, Ticket, DollarSign, Edit2, Trash2, Plus, Save } from 'lucide-react-native';
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
+  const { tiers, addTier, editTier, removeTier } = useDatabaseStore();
   if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
   
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Form State for Tiers
+  const [newTierName, setNewTierName] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+  const [newCapacity, setNewCapacity] = useState('100');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const handleAddOrEdit = () => {
+    if (newTierName.trim() !== '' && newPrice.trim() !== '') {
+      if (editingId) {
+        editTier(editingId, newTierName, parseFloat(newPrice) || 0, parseInt(newCapacity) || 100);
+        setEditingId(null);
+      } else {
+        addTier(newTierName, parseFloat(newPrice) || 0, parseInt(newCapacity) || 100);
+      }
+      setNewTierName('');
+      setNewPrice('');
+      setNewCapacity('100');
+    }
+  };
+
+  const startEdit = (tier: any) => {
+    setEditingId(tier.id);
+    setNewTierName(tier.name);
+    setNewPrice(tier.price.toString());
+    setNewCapacity(tier.capacity.toString());
+    // Optionally scroll down
+  };
 
   const loadStats = useCallback(async () => {
     try {
@@ -49,7 +80,9 @@ export default function AdminDashboard() {
 
   return (
     <ScrollView 
+      ref={scrollViewRef}
       style={styles.container} 
+      keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#231e1a" />}
     >
       <View style={styles.content}>
@@ -87,6 +120,65 @@ export default function AdminDashboard() {
             </View>
           </View>
         ) : null}
+
+        {/* TIERS MANAGEMENT SECTION */}
+        <View style={[styles.mockSection, { borderTopWidth: 0 }]}>
+          <Text style={styles.title}>{editingId ? 'Editando Etapa' : 'Crear Etapa de Venta (Tier)'}</Text>
+          
+          <View style={styles.form}>
+            <TextInput 
+              style={styles.input} 
+              placeholder="Nombre (Ej. Preventa 1)" 
+              placeholderTextColor="#bdb39b" 
+              value={newTierName} 
+              onChangeText={setNewTierName} 
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <TextInput 
+                  style={styles.input} 
+                  placeholder="Precio $" 
+                  placeholderTextColor="#bdb39b" 
+                  keyboardType="numeric" 
+                  value={newPrice} 
+                  onChangeText={setNewPrice} 
+                />
+              </View>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <TextInput 
+                  style={styles.input} 
+                  placeholder="Aforo" 
+                  placeholderTextColor="#bdb39b" 
+                  keyboardType="numeric" 
+                  value={newCapacity} 
+                  onChangeText={setNewCapacity} 
+                />
+              </View>
+              <TouchableOpacity style={[styles.addBtn, editingId && { backgroundColor: '#47311f' }]} onPress={handleAddOrEdit}>
+                {editingId ? <Save color="#f4efe9" size={24} /> : <Plus color="#f4efe9" size={24} />}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Text style={styles.title}>Etapas Existentes ({tiers.length})</Text>
+
+          {tiers.map(item => (
+            <View key={item.id} style={styles.card}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.tableName}>{item.name}</Text>
+                <Text style={styles.tableMeta}>Precio: ${item.price} | Aforo Límite: {item.capacity}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => startEdit(item)} style={[styles.deleteBtn, { backgroundColor: '#686a54' }]}>
+                  <Edit2 color="#f4efe9" size={20} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => removeTier(item.id)} style={[styles.deleteBtn, { backgroundColor: '#47311f' }]}>
+                  <Trash2 color="#f4efe9" size={20} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
 
       </View>
     </ScrollView>
@@ -174,5 +266,59 @@ const styles = StyleSheet.create({
     color: '#231e1a',
     fontSize: 32,
     fontFamily: 'NunitoSans_700Bold',
+  },
+  form: {
+    flexDirection: 'column',
+    gap: 12,
+    marginBottom: 32,
+  },
+  input: {
+    backgroundColor: '#d9d1c0',
+    borderWidth: 1,
+    borderColor: '#bdb39b',
+    borderRadius: 8,
+    color: '#231e1a',
+    paddingHorizontal: 8,
+    height: 50,
+    fontFamily: 'NunitoSans_400Regular',
+  },
+  addBtn: {
+    backgroundColor: '#686a54',
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#bdb39b',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tableName: {
+    color: '#231e1a',
+    fontSize: 16,
+    fontFamily: 'NunitoSans_600SemiBold',
+    marginBottom: 4,
+  },
+  tableMeta: {
+    color: '#686a54',
+    fontSize: 12,
+  },
+  deleteBtn: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  mockSection: {
+    marginTop: 40,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderColor: '#bdb39b',
   },
 });
