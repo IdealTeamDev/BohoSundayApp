@@ -10,9 +10,9 @@ const mockTables: Table[] = [
 ];
 
 const mockTickets: Record<string, Ticket> = {
-  'tick_group_1': { id: 't_1', qrCode: 'tick_group_1', buyerName: 'Juan C.', capacity: 10, used: 0, tableId: 't3', tierId: 'tier_2', status: 'valid' },
-  'tick_single_1': { id: 't_2', qrCode: 'tick_single_1', buyerName: 'Maria G.', capacity: 1, used: 0, tableId: 't4', tierId: 'tier_1', status: 'valid' },
-  'tick_vip_1': { id: 't_3', qrCode: 'tick_vip_1', buyerName: 'Carlos P.', capacity: 15, used: 0, tableId: 't5', tierId: 'tier_2', status: 'valid' },
+  'tick_group_1': { id: 't_1', qrCode: 'tick_group_1', buyerName: 'Juan C.', capacity: 10, used: 0, tableId: 't3', ticketType: 'general', tierId: 'tier_2', status: 'valid' },
+  'tick_single_1': { id: 't_2', qrCode: 'tick_single_1', buyerName: 'Maria G.', capacity: 1, used: 0, tableId: 't4', ticketType: 'early', tierId: 'tier_1', status: 'valid' },
+  'tick_vip_1': { id: 't_3', qrCode: 'tick_vip_1', buyerName: 'Carlos P.', capacity: 15, used: 0, tableId: 't5', ticketType: 'bed', tierId: 'tier_2', status: 'valid' },
 };
 
 const mockTiers: Tier[] = [
@@ -61,6 +61,9 @@ interface DatabaseState {
   // Active Stage
   getActiveTier: () => Tier | undefined;
   
+  // Ticket management
+  editTicket: (id: string, phone: string) => void;
+
   // Push Notifications
   updateStaffPushToken: (id: string, pushToken?: string) => void;
   sendPushNotification: (tokens: string[], title: string, body: string) => Promise<void>;
@@ -220,6 +223,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       buyerName: 'Taquilla Puerta',
       capacity: capacity,
       used: capacity, // Automatically used because they enter immediately
+      ticketType: 'general',
       tierId: tierId,
       status: 'used'
     };
@@ -232,6 +236,19 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     // Sort tiers by endDate, find the first one that hasn't expired yet
     const sorted = [...tiers].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
     return sorted.find(t => new Date(t.endDate).getTime() > now) || sorted[sorted.length - 1]; // Return active or the last one
+  },
+
+  editTicket: (id, phone) => {
+    set(state => {
+      const ticket = state.tickets[id];
+      if (!ticket) return state;
+      return {
+        tickets: {
+          ...state.tickets,
+          [id]: { ...ticket, phone }
+        }
+      };
+    });
   },
 
   updateStaffPushToken: (id, pushToken) => {

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Plus, X, Share2, Download } from 'lucide-react-native';
+import { Plus, X, Share2, MessageCircle } from 'lucide-react-native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Ticket } from '../../types';
 
 export default function QRManagerScreen() {
-  const { tickets, tiers, tables, adminCreateTicket } = useDatabaseStore();
+  const { tickets, tiers, tables, adminCreateTicket, editTicket } = useDatabaseStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const { user } = useAuthStore();
@@ -20,6 +20,9 @@ export default function QRManagerScreen() {
   const [capacity, setCapacity] = useState('1');
   const [selectedType, setSelectedType] = useState<'early'|'general'|'bed'|'table'|''>('');
   const [selectedTable, setSelectedTable] = useState('');
+  
+  // Modal Edit state
+  const [editPhone, setEditPhone] = useState('');
 
   const ticketsArr = Object.values(tickets || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
@@ -42,7 +45,26 @@ export default function QRManagerScreen() {
 
   const openQrModal = (ticket: Ticket) => {
     setSelectedTicket(ticket);
+    setEditPhone(ticket.phone || '');
     setQrModalVisible(true);
+  };
+
+  const shareViaWhatsApp = () => {
+    if (!selectedTicket) return;
+    const number = editPhone.replace(/\D/g, '');
+    if (!number) {
+      Alert.alert('Error', 'Ingresa un número de teléfono válido.');
+      return;
+    }
+    // Update store with new phone
+    editTicket(selectedTicket.id, editPhone);
+    
+    // Construct message
+    const message = `Hola ${selectedTicket.buyerName},\n\nAquí tienes tu entrada para *Boho Sunday*.\n\n🎟️ *Tipo:* ${selectedTicket.ticketType?.toUpperCase() || 'General'}\n👥 *Aforo:* ${selectedTicket.capacity} Personas\n\nTu código de acceso único es: ${selectedTicket.qrCode}`;
+    
+    Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
+      Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
+    });
   };
 
   const shareQrCode = async () => {
@@ -186,10 +208,26 @@ export default function QRManagerScreen() {
                   source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}` }} 
                   style={styles.qrLarge} 
                 />
+
+                <View style={{ width: '100%', marginBottom: 16 }}>
+                  <Text style={styles.label}>Número de WhatsApp</Text>
+                  <TextInput 
+                    style={[styles.input, { marginBottom: 0 }]} 
+                    value={editPhone} 
+                    onChangeText={setEditPhone} 
+                    placeholder="Ej. 573000000000" 
+                    keyboardType="phone-pad" 
+                  />
+                </View>
                 
-                <TouchableOpacity style={styles.shareBtn} onPress={shareQrCode}>
-                  <Share2 color="#f4efe9" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.shareBtnText}>Compartir / Reenviar</Text>
+                <TouchableOpacity style={styles.shareBtn} onPress={shareViaWhatsApp}>
+                  <MessageCircle color="#f4efe9" size={20} style={{ marginRight: 8 }} />
+                  <Text style={styles.shareBtnText}>Enviar por WhatsApp</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#d9d1c0', marginTop: 12 }]} onPress={shareQrCode}>
+                  <Share2 color="#231e1a" size={20} style={{ marginRight: 8 }} />
+                  <Text style={[styles.shareBtnText, { color: '#231e1a' }]}>Descargar / Compartir Imagen</Text>
                 </TouchableOpacity>
               </>
             )}
