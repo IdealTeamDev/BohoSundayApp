@@ -59,8 +59,8 @@ export default function QRManagerScreen() {
     // Update store with new phone
     editTicket(selectedTicket.id, editPhone);
     
-    // Construct message
-    const message = `Hola ${selectedTicket.buyerName},\n\nAquí tienes tu entrada para *Boho Sunday*.\n\n🎟️ *Tipo:* ${selectedTicket.ticketType?.toUpperCase() || 'General'}\n👥 *Aforo:* ${selectedTicket.capacity} Personas\n\nTu código de acceso único es: ${selectedTicket.qrCode}`;
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}`;
+    const message = `Hola ${selectedTicket.buyerName},\n\nAquí tienes tu entrada para *Boho Sunday*.\n\n🎟️ *Tipo:* ${selectedTicket.ticketType?.toUpperCase() || 'General'}\n👥 *Aforo:* ${selectedTicket.capacity} Personas\n\nTu código de acceso único es: ${selectedTicket.qrCode}\n\n📷 *Abre este enlace para ver tu Código QR:*\n${qrImageUrl}`;
     
     Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
       Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
@@ -71,14 +71,18 @@ export default function QRManagerScreen() {
     if (!selectedTicket) return;
     try {
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}`;
-      // @ts-ignore
-      const fileUri = (FileSystem.documentDirectory || FileSystem.cacheDirectory) + `QR_${selectedTicket.buyerName.replace(/\s/g, '_')}.png`;
+      const safeName = selectedTicket.buyerName.replace(/[^a-zA-Z0-9]/g, '_');
+      const fileUri = (FileSystem.documentDirectory || FileSystem.cacheDirectory) + `QR_${safeName}.png`;
       
       const { uri } = await FileSystem.downloadAsync(qrUrl, fileUri);
       
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
-        await Sharing.shareAsync(uri, { dialogTitle: 'Compartir Código QR' });
+        await Sharing.shareAsync(uri, { 
+          dialogTitle: 'Compartir Código QR',
+          mimeType: 'image/png',
+          UTI: 'public.png'
+        });
       } else {
         Alert.alert('Error', 'No se puede compartir en este dispositivo');
       }
