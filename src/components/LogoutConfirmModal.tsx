@@ -99,7 +99,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontFamily: 'NunitoSans_600SemiBold',
     color: '#231e1a',
     marginBottom: 8,
     fontFamily: 'NunitoSans_600SemiBold',
@@ -132,11 +131,9 @@ const styles = StyleSheet.create({
   cancelText: {
     color: '#47311f',
     fontFamily: 'NunitoSans_600SemiBold',
-    fontFamily: 'NunitoSans_600SemiBold',
   },
   confirmText: {
     color: '#ffffff',
-    fontFamily: 'NunitoSans_600SemiBold',
     fontFamily: 'NunitoSans_600SemiBold',
   }
 });

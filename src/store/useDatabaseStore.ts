@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { Table, Ticket, Tier, StaffMember } from '../types';
+import { StaffMember, Table, Ticket, Tier } from '../types';
 
 const mockTables: Table[] = [
-  { id: 't1', zoneId: 'z1', name: 'Oasis 1', capacity: 10, status: 'available' }, 
-  { id: 't2', zoneId: 'z1', name: 'Oasis 2', capacity: 10, status: 'available' }, 
-  { id: 't3', zoneId: 'z1', name: 'Oasis 3', capacity: 10, status: 'reserved', ticketId: 'tick_group_1' }, 
+  { id: 't1', zoneId: 'z1', name: 'Oasis 1', capacity: 10, status: 'available' },
+  { id: 't2', zoneId: 'z1', name: 'Oasis 2', capacity: 10, status: 'available' },
+  { id: 't3', zoneId: 'z1', name: 'Oasis 3', capacity: 10, status: 'reserved', ticketId: 'tick_group_1' },
   { id: 't4', zoneId: 'z1', name: 'Oasis 4', capacity: 10, status: 'reserved', ticketId: 'tick_single_1' },
   { id: 't5', zoneId: 'z1', name: 'Oasis VIP', capacity: 15, status: 'reserved', ticketId: 'tick_vip_1' },
 ];
@@ -22,8 +22,7 @@ const mockTiers: Tier[] = [
 
 const mockStaff: StaffMember[] = [
   { id: 'staff_1', name: 'Portero Demo', username: 'portero', pin: '1234', role: 'bouncer', isActive: true },
-  { id: 'staff_2', name: 'Viewer 1 (Completo)', username: 'viewer1', pin: '1234', role: 'viewer1', isActive: true },
-  { id: 'staff_3', name: 'Viewer 2 (Parcial)', username: 'viewer2', pin: '1234', role: 'viewer2', isActive: true },
+  { id: 'staff_2', name: 'Viewer (Dashboard)', username: 'viewer', pin: '1234', role: 'viewer', isActive: true },
 ];
 
 interface DatabaseState {
@@ -31,7 +30,7 @@ interface DatabaseState {
   tickets: Record<string, Ticket>;
   tiers: Tier[];
   staff: StaffMember[];
-  
+
   // Phase 4: Security and Offline Engine
   isAirplaneMode: boolean;
   offlineQueue: { qrCode: string; count: number }[];
@@ -41,17 +40,17 @@ interface DatabaseState {
   processScan: (qrCode: string, count: number) => Promise<{ success: boolean; message: string }>;
   registerSession: (userId: string, deviceId: string) => void;
   checkSessionValidity: (userId: string, deviceId: string) => boolean;
-  
+
   // Admin functions
   addTable: (name: string, capacity: number, price?: number) => void;
   removeTable: (id: string) => void;
   addTier: (name: string, endDate: string, priceEarly: number, priceGeneral: number, priceBed: number, priceTable: number) => void;
   removeTier: (id: string) => void;
   editTier: (id: string, name: string, endDate: string, priceEarly: number, priceGeneral: number, priceBed: number, priceTable: number) => void;
-  adminCreateTicket: (buyerName: string, phone: string, ticketType: 'early'|'general'|'bed'|'table', capacity: number, tableId?: string) => void;
-  
+  adminCreateTicket: (buyerName: string, phone: string, ticketType: 'early' | 'general' | 'bed' | 'table', capacity: number, tableId?: string) => void;
+
   // Staff functions
-  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer1' | 'viewer2') => void;
+  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer') => void;
   toggleStaffStatus: (id: string) => void;
   removeStaff: (id: string) => void;
 
@@ -60,7 +59,7 @@ interface DatabaseState {
 
   // Active Stage
   getActiveTier: () => Tier | undefined;
-  
+
   // Ticket management
   editTicket: (id: string, phone: string) => void;
 
@@ -80,7 +79,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
 
   setAirplaneMode: async (mode) => {
     set({ isAirplaneMode: mode });
-    
+
     // If we re-connect to internet, process the queue!
     if (!mode) {
       const { offlineQueue } = get();
@@ -109,7 +108,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
 
   processScan: async (qrCode, count) => {
     const { tickets, tables, isAirplaneMode, offlineQueue } = get();
-    
+
     // OFFLINE QUEUEING
     if (isAirplaneMode) {
       set({ offlineQueue: [...offlineQueue, { qrCode, count }] });
@@ -131,7 +130,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     }
 
     const isFullyUsed = (ticket.used + count) >= ticket.capacity;
-    
+
     const updatedTicket: Ticket = {
       ...ticket,
       used: ticket.used + count,
@@ -260,13 +259,13 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   sendPushNotification: async (tokens, title, body) => {
     const validTokens = tokens.filter(t => t);
     if (validTokens.length === 0) return;
-    
+
     const messages = validTokens.map(token => ({
       to: token,
       sound: 'default',
       title: title,
       body: body,
-      data: { },
+      data: {},
     }));
 
     try {

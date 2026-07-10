@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
   title: {
     color: '#231e1a',
     fontSize: 18,
-    fontFamily: 'NunitoSans_600SemiBold',
     marginBottom: 16,
     marginTop: 8,
     textTransform: 'uppercase',
@@ -139,7 +138,6 @@ const styles = StyleSheet.create({
   tableName: {
     color: '#231e1a',
     fontSize: 16,
-    fontFamily: 'NunitoSans_600SemiBold',
     marginBottom: 4,
     fontFamily: 'NunitoSans_600SemiBold',
   },

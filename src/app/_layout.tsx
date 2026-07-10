@@ -47,7 +47,7 @@ export default function RootLayout() {
       if (inAuthGroup) {
         if (user.role === 'bouncer') {
           router.replace('/(staff)/bouncer/scanner');
-        } else if (user.role === 'viewer1' || user.role === 'viewer2') {
+        } else if (user.role === 'viewer') {
           router.replace('/(admin)/tables');
         } else if (user.role === 'admin') {
           router.replace('/(admin)/dashboard');
