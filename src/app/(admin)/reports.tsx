@@ -5,32 +5,40 @@ import { FileText, Download, DollarSign, Users, Activity, Coffee } from 'lucide-
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import { api, OrderInfo } from '../../services/api';
+import { useDatabaseStore } from '../../store/useDatabaseStore';
 
 export default function ReportsScreen() {
   const { user } = useAuthStore();
   const showRevenue = true; 
   
+  const { tickets } = useDatabaseStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadOrders = useCallback(async () => {
+  const loadOrders = useCallback(() => {
+    setLoading(true);
     try {
-      const data = await api.getAdminOrders();
-      setOrders(data || []);
-    } catch (err: any) {
-      console.log('Error loading orders:', err);
+      const ticketsArr = Object.values(tickets) as import('../../types').Ticket[];
+      const mappedOrders = ticketsArr.map(t => ({
+        orderId: t.order_id,
+        buyerInfo: { name: t.buyer_name || 'Desconocido' },
+        ticketName: t.ticket_name || t.zone || 'General',
+        quantity: t.total_accesos || 0,
+        accessesUsed: (t.total_accesos || 0) - (t.accesos_restantes || 0),
+        price: Number(t.ticket_price || 0)
+      }));
+      setOrders(mappedOrders);
+    } catch (err) {
+      console.log('Error processing orders for reports:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [tickets]);
 
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(loadOrders, 15000);
-    return () => clearInterval(interval);
   }, [loadOrders]);
 
   const onRefresh = () => {
