@@ -146,6 +146,7 @@ export default function StaffManagerScreen() {
 
   if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
 
+  return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Gestión de Personal</Text>
