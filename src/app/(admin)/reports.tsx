@@ -47,6 +47,7 @@ export default function ReportsScreen() {
   };
 
   // --- METRICS CALCULATION ---
+  const totalOrders = orders.length;
   const totalCapacity = orders.reduce((acc, o) => acc + o.quantity, 0);
   const totalArrived = orders.reduce((acc, o) => acc + (o.accessesUsed || 0), 0);
   const overallPercentage = totalCapacity > 0 ? (totalArrived / totalCapacity) * 100 : 0;
@@ -59,23 +60,32 @@ export default function ReportsScreen() {
       salesByTierMap.set(key, { 
         name: key, 
         sold: 0, 
+        capacity: 0,
         entered: 0, 
         revenue: 0 
       });
     }
     const tier = salesByTierMap.get(key);
-    tier.sold += o.quantity;
+    tier.sold += 1; // 1 order
+    tier.capacity += o.quantity; // Total seats
     tier.entered += (o.accessesUsed || 0);
-    tier.revenue += (o.price || 0) * o.quantity;
+    tier.revenue += (o.price || 0);
   });
 
   const salesByTier = Array.from(salesByTierMap.values()).map(t => ({
     ...t,
-    soldPercentage: 100, // We don't have total capacity per tier dynamically here easily, so 100% of sold
-    enteredPercentage: t.sold > 0 ? (t.entered / t.sold) * 100 : 0
+    enteredPercentage: t.capacity > 0 ? (t.entered / t.capacity) * 100 : 0
   }));
 
   const totalRevenue = salesByTier.reduce((acc, t) => acc + t.revenue, 0);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
 
   // --- EXPORT FUNCTIONS ---
   const generateCSV = async () => {
@@ -213,8 +223,8 @@ export default function ReportsScreen() {
   };
 
   // --- RENDER HELPERS ---
-  const renderProgressBar = (percentage: number, color = '#686a54') => (
-    <View style={styles.progressBarTrack}>
+  const renderProgressBar = (percentage: number, color = '#47311f', bgColor = '#f0ebe1') => (
+    <View style={[styles.progressBarTrack, { backgroundColor: bgColor }]}>
       <View style={[styles.progressBarFill, { width: `${Math.min(percentage, 100)}%`, backgroundColor: color }]} />
     </View>
   );
@@ -222,85 +232,101 @@ export default function ReportsScreen() {
   return (
     <ScrollView 
       style={styles.container} 
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#231e1a" />}
     >
       
-      <Text style={styles.headerTitle}>Dashboard de Métricas</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Métricas Generales</Text>
+        <Text style={styles.headerSubtitle}>Resumen en tiempo real del evento</Text>
+      </View>
 
       {loading && orders.length === 0 ? (
-        <ActivityIndicator size="large" color="#47311f" style={{ marginTop: 20 }} />
+        <ActivityIndicator size="large" color="#47311f" style={{ marginTop: 40 }} />
       ) : (
         <>
-          {/* KPI CARDS ROW 1 */}
-          <View style={styles.kpiRow}>
+          {/* KPI CARDS */}
+          <View style={styles.kpiContainer}>
             {showRevenue && (
-              <View style={styles.kpiCard}>
+              <View style={[styles.kpiCard, styles.kpiCardPrimary]}>
                 <View style={styles.kpiHeader}>
-                  <Text style={styles.kpiTitle}>Ingresos Totales</Text>
-                  <DollarSign color="#686a54" size={16} />
+                  <Text style={[styles.kpiTitle, { color: 'rgba(255,255,255,0.8)' }]}>Ingresos Totales</Text>
+                  <View style={styles.iconCircleLight}>
+                    <DollarSign color="#fff" size={16} />
+                  </View>
                 </View>
-                <Text style={styles.kpiValue}>${totalRevenue}</Text>
+                <Text style={[styles.kpiValue, { color: '#fff' }]} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(totalRevenue)}</Text>
               </View>
             )}
-            <View style={styles.kpiCard}>
-              <View style={styles.kpiHeader}>
-                <Text style={styles.kpiTitle}>Tickets Vendidos</Text>
-                <Activity color="#686a54" size={16} />
+
+            <View style={styles.kpiRow}>
+              <View style={styles.kpiCardSmall}>
+                <View style={styles.kpiHeader}>
+                  <Text style={styles.kpiTitle}>Órdenes (Ventas)</Text>
+                  <Activity color="#a39a85" size={16} />
+                </View>
+                <Text style={styles.kpiValueSmall}>{totalOrders}</Text>
               </View>
-              <Text style={styles.kpiValue}>{totalCapacity}</Text>
+
+              <View style={styles.kpiCardSmall}>
+                <View style={styles.kpiHeader}>
+                  <Text style={styles.kpiTitle}>Aforo Ingresado</Text>
+                  <Users color="#a39a85" size={16} />
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                  <Text style={styles.kpiValueSmall}>{totalArrived}</Text>
+                  <Text style={styles.kpiSubSmall}> / {totalCapacity}</Text>
+                </View>
+              </View>
             </View>
           </View>
 
-          {/* KPI CARDS ROW 2 */}
-          <View style={styles.kpiRow}>
-            <View style={styles.kpiCard}>
-              <View style={styles.kpiHeader}>
-                <Text style={styles.kpiTitle}>Aforo Actual</Text>
-                <Users color="#686a54" size={16} />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                <Text style={styles.kpiValue}>{totalArrived}</Text>
-                <Text style={styles.kpiSub}> / {totalCapacity}</Text>
-              </View>
-              {renderProgressBar(overallPercentage)}
-            </View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Desglose por Zona / Ticket</Text>
+            <Text style={styles.sectionSubtitle}>Ingresos y asistencia real de cada área</Text>
           </View>
-
-          <Text style={styles.sectionTitle}>Desglose Financiero por Etapa</Text>
           
           <View style={styles.listContainer}>
             {salesByTier.length > 0 ? salesByTier.map((data, idx) => (
               <View key={data.name} style={[styles.tierRow, idx === salesByTier.length - 1 && { borderBottomWidth: 0 }]}>
-                <View style={styles.tierHeader}>
-                  <Text style={styles.tierName}>{data.name}</Text>
-                  {showRevenue && <Text style={styles.tierRevenue}>${data.revenue}</Text>}
+                <View style={styles.tierTop}>
+                  <View>
+                    <Text style={styles.tierName}>{data.name}</Text>
+                    <Text style={styles.tierMeta}>{data.sold} reservas • {data.capacity} cupos</Text>
+                  </View>
+                  {showRevenue && <Text style={styles.tierRevenue}>{formatCurrency(data.revenue)}</Text>}
                 </View>
                 
                 <View style={styles.progressSection}>
                   <View style={styles.progressLabelRow}>
                     <Text style={styles.progressLabel}>Asistencia Real</Text>
-                    <Text style={styles.progressValue}>{data.entered} / {data.sold} ({Math.round(data.enteredPercentage)}%)</Text>
+                    <Text style={styles.progressValue}>{data.entered} / {data.capacity} ({Math.round(data.enteredPercentage)}%)</Text>
                   </View>
-                  {renderProgressBar(data.enteredPercentage, '#47311f')}
+                  {renderProgressBar(data.enteredPercentage, '#c89d71', '#f5f0e6')}
                 </View>
               </View>
             )) : (
-              <Text style={styles.emptyText}>No hay ventas aún.</Text>
+              <View style={styles.emptyState}>
+                <FileText color="#a39a85" size={40} style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyText}>No hay ventas registradas aún.</Text>
+              </View>
             )}
           </View>
 
-          <Text style={styles.sectionTitle}>Exportación de Datos</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Exportación de Datos</Text>
+            <Text style={styles.sectionSubtitle}>Descarga reportes para contabilidad</Text>
+          </View>
           
           <View style={styles.actionRow}>
-            <TouchableOpacity style={[styles.exportBtn, { backgroundColor: '#686a54' }]} onPress={generateCSV}>
-              <FileText color="#f4efe9" size={24} />
-              <Text style={styles.exportBtnText}>Descargar CSV</Text>
+            <TouchableOpacity style={styles.exportBtnCsv} onPress={generateCSV}>
+              <FileText color="#47311f" size={20} />
+              <Text style={styles.exportBtnTextCsv}>Descargar CSV</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.exportBtn, { backgroundColor: '#47311f' }]} onPress={generatePDF}>
-              <Download color="#f4efe9" size={24} />
-              <Text style={styles.exportBtnText}>Generar Reporte PDF</Text>
+            <TouchableOpacity style={styles.exportBtnPdf} onPress={generatePDF}>
+              <Download color="#fff" size={20} />
+              <Text style={styles.exportBtnTextPdf}>Generar PDF</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -312,137 +338,224 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4efe9',
-    padding: 16,
+    backgroundColor: '#f8f5f1',
+    paddingHorizontal: 20,
+  },
+  header: {
+    marginBottom: 24,
+    marginTop: 8,
   },
   headerTitle: {
-    color: '#231e1a',
-    fontSize: 22,
-    fontFamily: 'NunitoSans_700Bold',
-    marginBottom: 20,
+    color: '#1a1614',
+    fontSize: 28,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    color: '#8b8378',
+    fontSize: 15,
+    fontFamily: 'NunitoSans_600SemiBold',
+    marginTop: 4,
+  },
+  sectionHeader: {
+    marginTop: 32,
+    marginBottom: 16,
   },
   sectionTitle: {
-    color: '#231e1a',
+    color: '#1a1614',
     fontSize: 18,
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginTop: 10,
-    marginBottom: 16,
+    fontFamily: 'NunitoSans_700Bold',
+  },
+  sectionSubtitle: {
+    color: '#8b8378',
+    fontSize: 13,
+    fontFamily: 'NunitoSans_400Regular',
+    marginTop: 2,
+  },
+  kpiContainer: {
+    gap: 12,
   },
   kpiRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 12,
+  },
+  kpiCardPrimary: {
+    backgroundColor: '#1a1614',
+    padding: 24,
+  },
+  kpiCardSmall: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   kpiCard: {
-    flex: 1,
-    backgroundColor: '#d9d1c0',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#bdb39b',
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   kpiHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   kpiTitle: {
-    color: '#686a54',
+    color: '#8b8378',
     fontSize: 12,
-    fontFamily: 'NunitoSans_600SemiBold',
+    fontFamily: 'NunitoSans_700Bold',
     textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  iconCircleLight: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   kpiValue: {
-    color: '#47311f',
-    fontSize: 28,
-    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 36,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: -1,
   },
-  kpiSub: {
-    color: '#686a54',
+  kpiValueSmall: {
+    color: '#1a1614',
+    fontSize: 24,
+    fontFamily: 'NunitoSans_800ExtraBold',
+  },
+  kpiSubSmall: {
+    color: '#8b8378',
     fontSize: 14,
-    fontFamily: 'NunitoSans_400Regular',
+    fontFamily: 'NunitoSans_600SemiBold',
   },
   progressBarTrack: {
-    height: 6,
-    backgroundColor: '#bdb39b',
-    borderRadius: 3,
-    marginTop: 10,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 12,
     width: '100%',
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   listContainer: {
-    backgroundColor: '#d9d1c0',
-    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: '#bdb39b',
-    marginBottom: 24,
-    overflow: 'hidden',
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   tierRow: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#bdb39b',
+    borderBottomColor: '#f0ebe1',
   },
-  tierHeader: {
+  tierTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   tierName: {
-    color: '#231e1a',
+    color: '#1a1614',
     fontSize: 16,
     fontFamily: 'NunitoSans_700Bold',
+    marginBottom: 2,
+  },
+  tierMeta: {
+    color: '#8b8378',
+    fontSize: 13,
+    fontFamily: 'NunitoSans_600SemiBold',
   },
   tierRevenue: {
-    color: '#47311f',
-    fontSize: 16,
-    fontFamily: 'NunitoSans_700Bold',
+    color: '#c89d71',
+    fontSize: 18,
+    fontFamily: 'NunitoSans_800ExtraBold',
   },
   progressSection: {
-    marginBottom: 8,
+    backgroundColor: '#faf8f5',
+    padding: 12,
+    borderRadius: 12,
   },
   progressLabelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'center',
   },
   progressLabel: {
-    color: '#686a54',
+    color: '#8b8378',
     fontSize: 12,
     fontFamily: 'NunitoSans_600SemiBold',
   },
   progressValue: {
-    color: '#47311f',
-    fontSize: 12,
-    fontFamily: 'NunitoSans_400Regular',
+    color: '#1a1614',
+    fontSize: 13,
+    fontFamily: 'NunitoSans_700Bold',
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
-    color: '#686a54',
-    fontSize: 14,
-    padding: 20,
+    color: '#8b8378',
+    fontSize: 15,
+    fontFamily: 'NunitoSans_600SemiBold',
     textAlign: 'center',
   },
   actionRow: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     gap: 12,
+    marginTop: 8,
   },
-  exportBtn: {
+  exportBtnCsv: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
     borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e8e2d5',
   },
-  exportBtnText: {
-    color: '#f4efe9',
-    fontSize: 16,
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginLeft: 12,
+  exportBtnPdf: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#1a1614',
+  },
+  exportBtnTextCsv: {
+    color: '#1a1614',
+    fontSize: 15,
+    fontFamily: 'NunitoSans_700Bold',
+    marginLeft: 8,
+  },
+  exportBtnTextPdf: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontFamily: 'NunitoSans_700Bold',
+    marginLeft: 8,
   }
 });
