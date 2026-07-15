@@ -109,6 +109,18 @@ export const useDatabaseStore = create<DatabaseState>()(
             set({ staff: staffData as StaffMember[] });
           }
 
+          // Fetch event stages (tiers)
+          const { data: stagesData } = await supabase.from('event_stages').select('*');
+          if (stagesData) {
+            const mappedTiers = stagesData.map(s => ({
+              id: s.id,
+              name: s.name,
+              endDate: s.end_date,
+              priceOverrides: typeof s.price_overrides === 'string' ? JSON.parse(s.price_overrides) : (s.price_overrides || {})
+            }));
+            set({ tiers: mappedTiers });
+          }
+
         } catch (e) {
           console.error("Sync failed", e);
         }

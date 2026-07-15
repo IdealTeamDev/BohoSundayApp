@@ -97,7 +97,7 @@ export default function AdminDashboard() {
       setError(null);
       const ticketsArr = Object.values(tickets) as import('../../types').Ticket[];
       
-      const totalRevenue = ticketsArr.reduce((acc, t) => acc + (parseFloat(t.ticket_price || '0')), 0);
+      const totalRevenue = ticketsArr.reduce((acc, t) => acc + Number(t.ticket_price || 0), 0);
       const totalCapacity = ticketsArr.reduce((acc, t) => acc + (t.total_accesos || 0), 0);
       const totalCheckIns = ticketsArr.reduce((acc, t) => acc + ((t.total_accesos - t.accesos_restantes) || 0), 0);
       const totalOrders = ticketsArr.length;
