@@ -104,7 +104,7 @@ export default function AdminDashboard() {
 
       setStats({
         totalRevenue,
-        totalSold: totalCapacity, // Number of seats sold
+        totalSold: totalOrders, // Number of reservations (17) instead of 117
         totalCheckIns,
         totalCapacity,
         totalOrders
@@ -165,8 +165,8 @@ export default function AdminDashboard() {
 
             <View style={[styles.statCard, { backgroundColor: '#686a54' }]}>
               <Ticket color="#f4efe9" size={32} style={styles.statIcon} />
-              <Text style={styles.statLabelLight}>Boletas Vendidas</Text>
-              <Text style={styles.statValueLight}>{stats.totalSold} / {stats.totalCapacity}</Text>
+              <Text style={styles.statLabelLight}>Boletas Vendidas (Reservas)</Text>
+              <Text style={styles.statValueLight}>{stats.totalSold}</Text>
             </View>
 
             <View style={[styles.statCard, { backgroundColor: '#d9d1c0' }]}>
