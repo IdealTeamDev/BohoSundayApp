@@ -8,7 +8,7 @@ import { RefreshCw, Users, Ticket, DollarSign, Edit2, Trash2, Plus, Save, X } fr
 
 export default function AdminDashboard() {
   const { user } = useAuthStore();
-  const { tiers, addTier, editTier, removeTier, products, addProduct, removeProduct } = useDatabaseStore();
+  const { tiers, addTier, editTier, removeTier, products, addProduct, removeProduct, tickets } = useDatabaseStore();
   if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
   
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -91,24 +91,34 @@ export default function AdminDashboard() {
     }
   };
 
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(() => {
+    setLoading(true);
     try {
       setError(null);
-      const data = await api.getAdminStats();
-      setStats(data);
+      const ticketsArr = Object.values(tickets) as import('../../types').Ticket[];
+      
+      const totalRevenue = ticketsArr.reduce((acc, t) => acc + (parseFloat(t.ticket_price || '0')), 0);
+      const totalCapacity = ticketsArr.reduce((acc, t) => acc + (t.total_accesos || 0), 0);
+      const totalCheckIns = ticketsArr.reduce((acc, t) => acc + ((t.total_accesos - t.accesos_restantes) || 0), 0);
+      const totalOrders = ticketsArr.length;
+
+      setStats({
+        totalRevenue,
+        totalSold: totalCapacity, // Number of seats sold
+        totalCheckIns,
+        totalCapacity,
+        totalOrders
+      });
     } catch (err: any) {
-      setError(err.message || 'Error cargando estadísticas');
+      setError(err.message || 'Error calculando estadísticas');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [tickets]);
 
   useEffect(() => {
     loadStats();
-    // Auto-refresh every 15 seconds
-    const interval = setInterval(loadStats, 15000);
-    return () => clearInterval(interval);
   }, [loadStats]);
 
   const onRefresh = () => {

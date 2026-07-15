@@ -8,7 +8,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Ticket } from '../../types';
 
 export default function QRManagerScreen() {
-  const { tickets, tiers, tables, adminCreateTicket, editTicket, getActiveTier, getFusedProductsForActiveTier } = useDatabaseStore();
+  const { tickets, tiers, tables, getActiveTier, getFusedProductsForActiveTier } = useDatabaseStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const { user } = useAuthStore();
@@ -24,7 +24,7 @@ export default function QRManagerScreen() {
   // Modal Edit state
   const [editPhone, setEditPhone] = useState('');
 
-  const ticketsArr = Object.values(tickets || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const ticketsArr = Object.values(tickets || {}).sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   
   const activeTier = getActiveTier();
   const availableProducts = getFusedProductsForActiveTier();
@@ -35,7 +35,8 @@ export default function QRManagerScreen() {
       return;
     }
     
-    adminCreateTicket(buyerName, phone, selectedType, parseInt(capacity), selectedTable || undefined);
+    // adminCreateTicket(buyerName, phone, selectedType, parseInt(capacity), selectedTable || undefined);
+    Alert.alert('Aviso', 'La creación de tickets desde la App está deshabilitada temporalmente en modo Real DB.');
     
     // Reset
     setBuyerName('');
@@ -48,7 +49,7 @@ export default function QRManagerScreen() {
 
   const openQrModal = (ticket: Ticket) => {
     setSelectedTicket(ticket);
-    setEditPhone(ticket.phone || '');
+    setEditPhone(ticket.buyer_phone || '');
     setQrModalVisible(true);
   };
 
@@ -60,10 +61,10 @@ export default function QRManagerScreen() {
       return;
     }
     // Update store with new phone
-    editTicket(selectedTicket.id, editPhone);
+    // editTicket(selectedTicket.id, editPhone);
     
-    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}`;
-    const message = `Hola ${selectedTicket.buyerName},\n\nAquí tienes tu entrada para *Boho Sunday*.\n\n🎟️ *Tipo:* ${selectedTicket.ticketType?.toUpperCase() || 'General'}\n👥 *Aforo:* ${selectedTicket.capacity} Personas\n\nTu código de acceso único es: ${selectedTicket.qrCode}\n\n📷 *Abre este enlace para ver tu Código QR:*\n${qrImageUrl}`;
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.order_id}`;
+    const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para *Boho Sunday*.\n\n🎟️ *Tipo:* ${selectedTicket.ticket_name?.toUpperCase() || 'General'}\n👥 *Aforo:* ${selectedTicket.total_accesos} Personas\n\nTu código de acceso único es: ${selectedTicket.order_id}\n\n📷 *Abre este enlace para ver tu Código QR:*\n${qrImageUrl}`;
     
     Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
       Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
@@ -73,8 +74,8 @@ export default function QRManagerScreen() {
   const shareQrCode = async () => {
     if (!selectedTicket) return;
     try {
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}`;
-      const safeName = selectedTicket.buyerName.replace(/[^a-zA-Z0-9]/g, '_');
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.order_id}`;
+      const safeName = selectedTicket.buyer_name.replace(/[^a-zA-Z0-9]/g, '_');
       
       if (Platform.OS === 'web') {
         const link = document.createElement('a');
@@ -120,16 +121,15 @@ export default function QRManagerScreen() {
           ticketsArr.map(ticket => (
             <TouchableOpacity key={ticket.id} style={styles.ticketCard} onPress={() => openQrModal(ticket)}>
               <View style={styles.ticketInfo}>
-                <Text style={styles.ticketName}>{ticket.buyerName}</Text>
-                <Text style={styles.ticketMeta}>Teléfono: {ticket.phone || 'N/A'}</Text>
-                <Text style={styles.ticketMeta}>Tipo: {availableProducts.find(p => p.id === ticket.ticketType)?.name || ticket.ticketType?.toUpperCase()}</Text>
-                <Text style={styles.ticketMeta}>Etapa de compra: {getTierName(ticket.tierId)}</Text>
-                <Text style={styles.ticketMeta}>Mesa: {ticket.tableId ? getTableName(ticket.tableId) : 'Ninguna'}</Text>
-                <Text style={styles.ticketMeta}>Aforo: {ticket.capacity}</Text>
+                <Text style={styles.ticketName}>{ticket.buyer_name}</Text>
+                <Text style={styles.ticketMeta}>Teléfono: {ticket.buyer_phone || 'N/A'}</Text>
+                <Text style={styles.ticketMeta}>Tipo: {availableProducts.find(p => p.id === ticket.ticket_name)?.name || ticket.ticket_name?.toUpperCase()}</Text>
+                <Text style={styles.ticketMeta}>Zona: {ticket.zone} #{ticket.ticket_number}</Text>
+                <Text style={styles.ticketMeta}>Aforo: {ticket.total_accesos} (Disponibles: {ticket.accesos_restantes})</Text>
               </View>
               <View style={styles.qrPreviewContainer}>
                 <Image 
-                  source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${ticket.qrCode}` }} 
+                  source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${ticket.order_id}` }} 
                   style={styles.qrPreview} 
                 />
               </View>
@@ -216,11 +216,11 @@ export default function QRManagerScreen() {
             
             {selectedTicket && (
               <>
-                <Text style={styles.qrModalTitle}>{selectedTicket.buyerName}</Text>
-                <Text style={styles.qrModalSub}>{selectedTicket.capacity} Personas - {availableProducts.find(p => p.id === selectedTicket.ticketType)?.name || selectedTicket.ticketType?.toUpperCase()}</Text>
+                <Text style={styles.qrModalTitle}>{selectedTicket.buyer_name}</Text>
+                <Text style={styles.qrModalSub}>{selectedTicket.total_accesos} Personas (Quedan {selectedTicket.accesos_restantes}) - {availableProducts.find(p => p.id === selectedTicket.ticket_name)?.name || selectedTicket.ticket_name?.toUpperCase()} #{selectedTicket.ticket_number}</Text>
                 
                 <Image 
-                  source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.qrCode}` }} 
+                  source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.order_id}` }} 
                   style={styles.qrLarge} 
                 />
 

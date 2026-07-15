@@ -18,7 +18,7 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
 
   syncTickets: async (ticketsArray) => {
     const ticketsMap = ticketsArray.reduce((acc, ticket) => {
-      acc[ticket.qrCode] = ticket;
+      acc[ticket.order_id] = ticket;
       return acc;
     }, {} as Record<string, Ticket>);
     
@@ -34,18 +34,18 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
       return { success: false, message: 'Falso o no encontrado' };
     }
 
-    if (ticket.status === 'used' || ticket.used >= ticket.capacity) {
+    if (ticket.status === 'used' || ticket.accesos_restantes <= 0) {
       return { success: false, message: 'Ya ingresó' };
     }
 
-    if (ticket.used + count > ticket.capacity) {
-      return { success: false, message: `Solo quedan ${ticket.capacity - ticket.used} cupos` };
+    if (count > ticket.accesos_restantes) {
+      return { success: false, message: `Solo quedan ${ticket.accesos_restantes} cupos` };
     }
 
     const updatedTicket: Ticket = {
       ...ticket,
-      used: ticket.used + count,
-      status: ((ticket.used + count) >= ticket.capacity ? 'used' : 'valid') as 'used' | 'valid'
+      accesos_restantes: ticket.accesos_restantes - count,
+      status: ((ticket.accesos_restantes - count) <= 0 ? 'used' : 'paid')
     };
 
     const newTickets = { ...tickets, [qrCode]: updatedTicket };

@@ -38,13 +38,13 @@ export default function MapComponent() {
             style={[
               styles.tableBox, 
               { 
-                backgroundColor: getStatusColor(table.status),
-                borderColor: table.status === 'available' ? '#bdb39b' : 'transparent',
-                borderWidth: table.status === 'available' ? 1 : 0
+                backgroundColor: getStatusColor(table.available ? 'available' : 'occupied'),
+                borderColor: table.available ? '#bdb39b' : 'transparent',
+                borderWidth: table.available ? 1 : 0
               }
             ]}
           >
-            <Text style={[styles.tableName, table.status === 'available' && { color: '#686a54' }]}>{table.name}</Text>
+            <Text style={[styles.tableName, table.available && { color: '#686a54' }]}>{table.name}</Text>
           </TouchableOpacity>
         ))}
       </View>

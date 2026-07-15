@@ -6,33 +6,34 @@ import { Ticket, Table } from '../../../types';
 export default function DashboardScreen() {
   const { tickets, tables } = useDatabaseStore();
 
-  const totalCapacity = (Object.values(tickets) as Ticket[]).reduce((acc, t) => acc + t.capacity, 0);
-  const totalArrived = (Object.values(tickets) as Ticket[]).reduce((acc, t) => acc + t.used, 0);
+  const ticketsArr = Object.values(tickets) as Ticket[];
+  const totalExpected = ticketsArr.reduce((acc, t) => acc + (t.total_accesos || 0), 0);
+  const totalArrived = ticketsArr.reduce((acc, t) => acc + ((t.total_accesos - t.accesos_restantes) || 0), 0);
   
-  const tablesOccupied = (tables as Table[]).filter(t => t.status === 'occupied').length;
-  const tablesReserved = (tables as Table[]).filter(t => t.status === 'reserved').length;
-  const tablesAvailable = (tables as Table[]).filter(t => t.status === 'available').length;
+  const availableTables = (tables as Table[]).filter(t => t.available).length;
+  const reservedTables = 0; // tables.filter(t => t.status === 'reserved').length;
+  const occupiedTables = (tables as Table[]).filter(t => !t.available).length;
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.heroCard}>
         <Text style={styles.heroTitle}>Progreso del Evento</Text>
-        <Text style={styles.heroBigNumber}>{totalArrived} / {totalCapacity}</Text>
+        <Text style={styles.heroBigNumber}>{totalArrived} / {totalExpected}</Text>
         <Text style={styles.heroSubtitle}>Personas Ingresadas</Text>
       </View>
 
       <Text style={styles.sectionTitle}>Estado de Mesas (Oasis)</Text>
       <View style={styles.grid}>
         <View style={[styles.statBox, { borderColor: '#3b82f6' }]}>
-          <Text style={styles.statNumber}>{tablesOccupied}</Text>
+          <Text style={styles.statNumber}>{occupiedTables}</Text>
           <Text style={styles.statLabel}>Ocupadas (Full/Parcial)</Text>
         </View>
         <View style={[styles.statBox, { borderColor: '#eab308' }]}>
-          <Text style={styles.statNumber}>{tablesReserved}</Text>
+          <Text style={styles.statNumber}>{reservedTables}</Text>
           <Text style={styles.statLabel}>Vendidas (Por llegar)</Text>
         </View>
         <View style={[styles.statBox, { borderColor: '#52525b' }]}>
-          <Text style={styles.statNumber}>{tablesAvailable}</Text>
+          <Text style={styles.statNumber}>{availableTables}</Text>
           <Text style={styles.statLabel}>Disponibles (Vacías)</Text>
         </View>
       </View>

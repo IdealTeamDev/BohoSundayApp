@@ -1,80 +1,44 @@
 import { create } from 'zustand';
-import { StaffMember, Table, Ticket, Tier } from '../types';
-
-const mockTables: Table[] = [
-  { id: 't1', zoneId: 'z1', name: 'Oasis 1', capacity: 10, status: 'available' },
-  { id: 't2', zoneId: 'z1', name: 'Oasis 2', capacity: 10, status: 'available' },
-  { id: 't3', zoneId: 'z1', name: 'Oasis 3', capacity: 10, status: 'reserved', ticketId: 'tick_group_1' },
-  { id: 't4', zoneId: 'z1', name: 'Oasis 4', capacity: 10, status: 'reserved', ticketId: 'tick_single_1' },
-  { id: 't5', zoneId: 'z1', name: 'Oasis VIP', capacity: 15, status: 'reserved', ticketId: 'tick_vip_1' },
-];
-
-const mockTickets: Record<string, Ticket> = {
-  'tick_group_1': { id: 't_1', qrCode: 'tick_group_1', buyerName: 'Juan C.', capacity: 10, used: 0, tableId: 't3', ticketType: 'general', tierId: 'tier_2', status: 'valid' },
-  'tick_single_1': { id: 't_2', qrCode: 'tick_single_1', buyerName: 'Maria G.', capacity: 1, used: 0, tableId: 't4', ticketType: 'early', tierId: 'tier_1', status: 'valid' },
-  'tick_vip_1': { id: 't_3', qrCode: 'tick_vip_1', buyerName: 'Carlos P.', capacity: 15, used: 0, tableId: 't5', ticketType: 'bed', tierId: 'tier_2', status: 'valid' },
-};
-
-const mockProducts: import('../types').Product[] = [
-  { id: 'early', name: 'Early Bird', type: 'ticket', basePrice: 40 },
-  { id: 'general', name: 'General', type: 'ticket', basePrice: 50 },
-  { id: 'bed_vip', name: 'Cama VIP', type: 'bed', basePrice: 120 },
-  { id: 'table_std', name: 'Mesa Estandar', type: 'table', basePrice: 60 },
-];
-
-const mockTiers: Tier[] = [
-  { 
-    id: 'tier_1', name: 'Preventa 1', endDate: '2026-07-20T23:59:59.000Z', 
-    priceOverrides: {
-      'early': 25,
-      'general': 40,
-      'bed_vip': 100,
-      'table_std': 50
-    }
-  },
-  { 
-    id: 'tier_2', name: 'General', endDate: '2026-08-01T23:59:59.000Z', 
-    priceOverrides: {} // Uses all base prices
-  },
-];
-
-const mockStaff: StaffMember[] = [
-  { id: 'staff_1', name: 'Portero Demo', username: 'portero', pin: '1234', role: 'bouncer', isActive: true },
-  { id: 'staff_2', name: 'Viewer (Dashboard)', username: 'viewer', pin: '1234', role: 'viewer', isActive: true },
-];
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StaffMember, Table, Ticket, Tier, Product } from '../types';
+import { supabase } from '../services/supabase';
 
 interface DatabaseState {
   tables: Table[];
   tickets: Record<string, Ticket>;
-  products: import('../types').Product[];
+  products: Product[];
   tiers: Tier[];
   staff: StaffMember[];
 
-  // Phase 4: Security and Offline Engine
   isAirplaneMode: boolean;
-  offlineQueue: { qrCode: string; count: number }[];
-  activeDeviceIds: Record<string, string>; // Maps userId -> deviceId
+  offlineQueue: { order_id: string; count: number }[];
+  activeDeviceIds: Record<string, string>;
+
+  // Sync actions
+  syncAll: () => Promise<void>;
+  subscribeToRealtime: () => void;
+  flushOfflineQueue: () => Promise<void>;
 
   setAirplaneMode: (mode: boolean) => Promise<void>;
   processScan: (qrCode: string, count: number) => Promise<{ success: boolean; message: string }>;
   registerSession: (userId: string, deviceId: string) => void;
   checkSessionValidity: (userId: string, deviceId: string) => boolean;
 
-  // Products Catalog
-  addProduct: (name: string, type: 'ticket' | 'bed' | 'table', basePrice: number) => void;
-  removeProduct: (id: string) => void;
-
   // Admin functions
-  addTable: (name: string, capacity: number, price?: number) => void;
+  addTable: (name: string, capacity: number, price?: string) => void;
   removeTable: (id: string) => void;
   addTier: (name: string, endDate: string, priceOverrides: Record<string, number>) => void;
   removeTier: (id: string) => void;
   editTier: (id: string, name: string, endDate: string, priceOverrides: Record<string, number>) => void;
-  adminCreateTicket: (buyerName: string, phone: string, ticketType: string, capacity: number, tableId?: string) => void;
   revokeTableReservation: (tableId: string) => void;
 
+  // Products
+  addProduct: (name: string, type: 'ticket' | 'bed' | 'table', basePrice: number) => void;
+  removeProduct: (id: string) => void;
+
   // Staff functions
-  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer') => void;
+  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer' | 'admin') => void;
   toggleStaffStatus: (id: string) => void;
   removeStaff: (id: string) => void;
 
@@ -83,283 +47,222 @@ interface DatabaseState {
 
   // Active Stage
   getActiveTier: () => Tier | undefined;
-  getFusedProductsForActiveTier: () => (import('../types').Product & { currentPrice: number })[];
-
-  // Ticket management
-  editTicket: (id: string, phone: string) => void;
+  getFusedProductsForActiveTier: () => (Product & { currentPrice: number })[];
 
   // Push Notifications
   updateStaffPushToken: (id: string, pushToken?: string) => void;
   sendPushNotification: (tokens: string[], title: string, body: string) => Promise<void>;
 }
 
-export const useDatabaseStore = create<DatabaseState>((set, get) => ({
-  tables: mockTables,
-  tickets: mockTickets,
-  products: mockProducts,
-  tiers: mockTiers,
-  staff: mockStaff,
-  isAirplaneMode: false,
-  offlineQueue: [],
-  activeDeviceIds: {},
+export const useDatabaseStore = create<DatabaseState>()(
+  persist(
+    (set, get) => ({
+      tables: [],
+      tickets: {},
+      products: [],
+      tiers: [],
+      staff: [],
+      isAirplaneMode: false,
+      offlineQueue: [],
+      activeDeviceIds: {},
 
-  setAirplaneMode: async (mode) => {
-    set({ isAirplaneMode: mode });
+      syncAll: async () => {
+        try {
+          // Fetch tickets
+          const { data: ticketsData } = await supabase.from('purchased_tickets').select('*');
+          if (ticketsData) {
+            const ticketsRecord: Record<string, Ticket> = {};
+            ticketsData.forEach(t => { ticketsRecord[t.order_id] = t as Ticket; });
+            set({ tickets: ticketsRecord });
+          }
 
-    // If we re-connect to internet, process the queue!
-    if (!mode) {
-      const { offlineQueue } = get();
-      if (offlineQueue.length > 0) {
+          // Fetch tables
+          const { data: tablesData } = await supabase.from('boleteria_mesas').select('*');
+          if (tablesData) {
+            const mappedTables = tablesData.map(t => ({
+              id: t.id,
+              zone: t.zone,
+              name: t.name,
+              persons: t.persons,
+              price: t.price,
+              available: t.available,
+              order_id: null // To be mapped if we associate them
+            })) as unknown as Table[];
+            set({ tables: mappedTables });
+          }
+
+          // Fetch products (individual tickets + tables as products)
+          const { data: prods } = await supabase.from('boleteria_individual').select('*');
+          if (prods) {
+            const mappedProds = prods.map(p => ({
+              id: p.id,
+              name: p.name,
+              type: 'ticket' as const,
+              basePrice: parseFloat(p.price || '0')
+            }));
+            set({ products: mappedProds });
+          }
+
+          // Fetch staff
+          const { data: staffData } = await supabase.from('staff_users').select('*');
+          if (staffData) {
+            set({ staff: staffData as StaffMember[] });
+          }
+
+        } catch (e) {
+          console.error("Sync failed", e);
+        }
+      },
+
+      subscribeToRealtime: () => {
+        supabase
+          .channel('public:purchased_tickets')
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'purchased_tickets' },
+            (payload) => {
+              const updatedTicket = payload.new as Ticket;
+              const { tickets } = get();
+              if (tickets[updatedTicket.order_id]) {
+                set({ tickets: { ...tickets, [updatedTicket.order_id]: updatedTicket } });
+              }
+            }
+          )
+          .subscribe();
+      },
+
+      flushOfflineQueue: async () => {
+        const { offlineQueue } = get();
+        if (offlineQueue.length === 0) return;
+
         console.log(`Syncing ${offlineQueue.length} offline scans...`);
-        // In a real app this would be Promise.all or a batch request to backend
-        for (const scan of offlineQueue) {
-          await get().processScan(scan.qrCode, scan.count);
+        const remainingQueue = [...offlineQueue];
+
+        for (let i = offlineQueue.length - 1; i >= 0; i--) {
+          const scan = offlineQueue[i];
+          
+          // Actually hit the endpoint or Supabase
+          const { data: currentTicket, error: fetchErr } = await supabase
+            .from('purchased_tickets')
+            .select('accesos_restantes, total_accesos')
+            .eq('order_id', scan.order_id)
+            .single();
+
+          if (!fetchErr && currentTicket) {
+            const newAccesos = Math.max(0, currentTicket.accesos_restantes - scan.count);
+            const status = newAccesos === 0 ? 'used' : 'paid';
+
+            const { error: updateErr } = await supabase
+              .from('purchased_tickets')
+              .update({ accesos_restantes: newAccesos, status })
+              .eq('order_id', scan.order_id);
+
+            if (!updateErr) {
+              // Successfully synced
+              remainingQueue.splice(i, 1);
+            }
+          } else {
+            // Probably ticket doesn't exist anymore or network error, let's just remove it if it doesn't exist
+            if (fetchErr?.code === 'PGRST116') { // No rows found
+              remainingQueue.splice(i, 1);
+            }
+          }
         }
-        set({ offlineQueue: [] });
-      }
-    }
-  },
 
-  registerSession: (userId, deviceId) => {
-    set((state) => ({
-      activeDeviceIds: { ...state.activeDeviceIds, [userId]: deviceId }
-    }));
-  },
+        set({ offlineQueue: remainingQueue });
+      },
 
-  checkSessionValidity: (userId, deviceId) => {
-    const activeId = get().activeDeviceIds[userId];
-    // If not registered yet or matches, it's valid. If registered to another, it's invalid.
-    return !activeId || activeId === deviceId;
-  },
-
-  processScan: async (qrCode, count) => {
-    const { tickets, tables, isAirplaneMode, offlineQueue } = get();
-
-    // OFFLINE QUEUEING
-    if (isAirplaneMode) {
-      set({ offlineQueue: [...offlineQueue, { qrCode, count }] });
-      // We will perform local optimistic update so the bouncer sees the success immediately
-    }
-
-    const ticket = tickets[qrCode];
-
-    if (!ticket) {
-      return { success: false, message: 'Falso o no encontrado' };
-    }
-
-    if (ticket.status === 'used' || ticket.used >= ticket.capacity) {
-      return { success: false, message: 'Ya ingresó' };
-    }
-
-    if (ticket.used + count > ticket.capacity) {
-      return { success: false, message: `Solo quedan ${ticket.capacity - ticket.used} cupos` };
-    }
-
-    const isFullyUsed = (ticket.used + count) >= ticket.capacity;
-
-    const updatedTicket: Ticket = {
-      ...ticket,
-      used: ticket.used + count,
-      status: isFullyUsed ? 'used' : 'valid'
-    };
-
-    const newTickets = { ...tickets, [qrCode]: updatedTicket };
-
-    // Update table status if associated
-    let newTables = [...tables];
-    if (ticket.tableId) {
-      newTables = tables.map(t => {
-        if (t.id === ticket.tableId) {
-          // If anyone arrived, mark as occupied
-          return { ...t, status: 'occupied' as const };
+      setAirplaneMode: async (mode) => {
+        set({ isAirplaneMode: mode });
+        if (!mode) {
+          await get().flushOfflineQueue();
         }
-        return t;
-      });
-    }
+      },
 
-    set({ tickets: newTickets, tables: newTables });
-    return { success: true, message: 'SIGA' };
-  },
+      registerSession: (userId, deviceId) => {
+        set((state) => ({
+          activeDeviceIds: { ...state.activeDeviceIds, [userId]: deviceId }
+        }));
+      },
 
-  addTable: (name, capacity, price) => {
-    const newId = `table_${Date.now()}`;
-    const newTable: Table = { id: newId, zoneId: 'z1', name, capacity, price, status: 'available' };
-    set((state) => ({ tables: [...state.tables, newTable] }));
-  },
+      checkSessionValidity: (userId, deviceId) => {
+        const activeId = get().activeDeviceIds[userId];
+        return !activeId || activeId === deviceId;
+      },
 
-  removeTable: (id) => {
-    set((state) => ({ tables: state.tables.filter(t => t.id !== id) }));
-  },
+      processScan: async (qrCode, count) => {
+        const { tickets, isAirplaneMode, offlineQueue } = get();
+        const ticket = tickets[qrCode];
 
-  addProduct: (name, type, basePrice) => {
-    const newId = `${type.substring(0, 1)}_${Date.now()}`;
-    set((state) => ({ products: [...state.products, { id: newId, name, type, basePrice }] }));
-  },
-
-  removeProduct: (id) => {
-    set((state) => ({ products: state.products.filter(p => p.id !== id) }));
-  },
-
-  addTier: (name, endDate, priceOverrides) => {
-    const newId = `tier_${Date.now()}`;
-    const newTier: Tier = { id: newId, name, endDate, priceOverrides };
-    set((state) => ({ tiers: [...state.tiers, newTier] }));
-  },
-
-  removeTier: (id) => {
-    set((state) => ({ tiers: state.tiers.filter(t => t.id !== id) }));
-  },
-
-  editTier: (id, name, endDate, priceOverrides) => {
-    set((state) => ({
-      tiers: state.tiers.map(t => t.id === id ? { ...t, name, endDate, priceOverrides } : t)
-    }));
-  },
-
-  adminCreateTicket: (buyerName, phone, ticketType, capacity, tableId) => {
-    const newId = `qr_${Date.now()}`;
-    const newTicket: Ticket = {
-      id: newId,
-      qrCode: newId,
-      buyerName,
-      phone,
-      capacity,
-      used: 0,
-      ticketType,
-      tierId: get().tiers[0]?.id, // Ideally the active tier ID
-      tableId,
-      status: 'valid',
-      createdAt: Date.now()
-    };
-    
-    set(state => {
-      const newTickets = { ...state.tickets, [newId]: newTicket };
-      let newTables = [...state.tables];
-      
-      if (tableId) {
-        newTables = newTables.map(t => 
-          t.id === tableId ? { ...t, status: 'reserved', ticketId: newId } : t
-        );
-      }
-      
-      return { tickets: newTickets, tables: newTables };
-    });
-  },
-
-  revokeTableReservation: (tableId) => {
-    set(state => {
-      const table = state.tables.find(t => t.id === tableId);
-      if (!table || !table.ticketId) return state;
-
-      const ticketId = table.ticketId;
-      const ticket = state.tickets[ticketId];
-      
-      let newTickets = { ...state.tickets };
-      if (ticket) {
-        // Remove table association and mark ticket as invalid to prevent use
-        newTickets[ticketId] = { ...ticket, tableId: undefined, status: 'invalid' };
-      }
-
-      const newTables = state.tables.map(t => 
-        t.id === tableId ? { ...t, status: 'available' as const, ticketId: undefined } : t
-      );
-
-      return { tickets: newTickets, tables: newTables };
-    });
-  },
-
-  addStaff: (name, username, pin, role) => {
-    const newStaff: StaffMember = { id: `staff_${Date.now()}`, name, username, pin, role, isActive: true };
-    set(state => ({ staff: [...state.staff, newStaff] }));
-  },
-
-  toggleStaffStatus: (id) => {
-    set(state => ({
-      staff: state.staff.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s)
-    }));
-  },
-
-  removeStaff: (id) => {
-    set(state => ({ staff: state.staff.filter(s => s.id !== id) }));
-  },
-
-  sellWalkInTicket: (tierId, capacity) => {
-    const newId = `walkin_${Date.now()}`;
-    const newTicket: Ticket = {
-      id: newId,
-      qrCode: newId,
-      buyerName: 'Taquilla Puerta',
-      capacity: capacity,
-      used: capacity, // Automatically used because they enter immediately
-      ticketType: 'general',
-      tierId: tierId,
-      status: 'used'
-    };
-    set(state => ({ tickets: { ...state.tickets, [newId]: newTicket } }));
-  },
-
-  getActiveTier: () => {
-    const { tiers } = get();
-    const now = new Date().getTime();
-    const sorted = [...tiers].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
-    return sorted.find(t => new Date(t.endDate).getTime() > now) || sorted[sorted.length - 1];
-  },
-
-  getFusedProductsForActiveTier: () => {
-    const tier = get().getActiveTier();
-    const products = get().products;
-    if (!tier) return products.map(p => ({ ...p, currentPrice: p.basePrice }));
-    
-    return products.map(p => ({
-      ...p,
-      currentPrice: tier.priceOverrides[p.id] !== undefined ? tier.priceOverrides[p.id] : p.basePrice
-    }));
-  },
-
-  editTicket: (id, phone) => {
-    set(state => {
-      const ticket = state.tickets[id];
-      if (!ticket) return state;
-      return {
-        tickets: {
-          ...state.tickets,
-          [id]: { ...ticket, phone }
+        if (!ticket) {
+          return { success: false, message: 'Código falso o no encontrado' };
         }
-      };
-    });
-  },
 
-  updateStaffPushToken: (id, pushToken) => {
-    set(state => ({
-      staff: state.staff.map(s => s.id === id ? { ...s, pushToken } : s)
-    }));
-  },
+        if (ticket.status === 'used' || ticket.accesos_restantes <= 0) {
+          return { success: false, message: 'Todos los accesos consumidos' };
+        }
 
-  sendPushNotification: async (tokens, title, body) => {
-    const validTokens = tokens.filter(t => t);
-    if (validTokens.length === 0) return;
+        if (count > ticket.accesos_restantes) {
+          return { success: false, message: `Solo quedan ${ticket.accesos_restantes} accesos` };
+        }
 
-    const messages = validTokens.map(token => ({
-      to: token,
-      sound: 'default',
-      title: title,
-      body: body,
-      data: {},
-    }));
+        // Local Optimistic Update
+        const newAccesos = ticket.accesos_restantes - count;
+        const status = newAccesos === 0 ? 'used' : 'paid';
+        const updatedTicket: Ticket = { ...ticket, accesos_restantes: newAccesos, status };
+        set({ tickets: { ...tickets, [qrCode]: updatedTicket } });
 
-    try {
-      await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Accept-encoding': 'gzip, deflate',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(messages),
-      });
-      console.log('Push notifications sent successfully to', validTokens);
-    } catch (e) {
-      console.error('Error sending push notification', e);
+        if (isAirplaneMode) {
+          set({ offlineQueue: [...offlineQueue, { order_id: qrCode, count }] });
+        } else {
+          // Push immediately to backend
+          set({ offlineQueue: [...offlineQueue, { order_id: qrCode, count }] });
+          get().flushOfflineQueue();
+        }
+
+        return { success: true, message: 'SIGA' };
+      },
+
+      addTable: (name, capacity, price) => {},
+      removeTable: (id) => {},
+      addProduct: (name, type, basePrice) => {},
+      removeProduct: (id) => {},
+      addTier: (name, endDate, priceOverrides) => {},
+      removeTier: (id) => {},
+      editTier: (id, name, endDate, priceOverrides) => {},
+      revokeTableReservation: (tableId) => {},
+
+      addStaff: (name, username, pin, role) => {},
+      toggleStaffStatus: (id) => {},
+      removeStaff: (id) => {},
+
+      sellWalkInTicket: (tierId, capacity) => {},
+
+      getActiveTier: () => {
+        const { tiers } = get();
+        if (!tiers || tiers.length === 0) return undefined;
+        const now = new Date().getTime();
+        const sorted = [...tiers].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
+        return sorted.find(t => new Date(t.endDate).getTime() > now) || sorted[sorted.length - 1];
+      },
+
+      getFusedProductsForActiveTier: () => {
+        const tier = get().getActiveTier();
+        const products = get().products || [];
+        if (!tier) return products.map(p => ({ ...p, currentPrice: p.basePrice }));
+        
+        return products.map(p => ({
+          ...p,
+          currentPrice: tier.priceOverrides?.[p.id] !== undefined ? tier.priceOverrides[p.id] : p.basePrice
+        }));
+      },
+
+      updateStaffPushToken: (id, pushToken) => {},
+      sendPushNotification: async (tokens, title, body) => {}
+    }),
+    {
+      name: 'bohosunday-storage',
+      storage: createJSONStorage(() => AsyncStorage),
     }
-  }
-}));
+  )
+);

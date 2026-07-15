@@ -7,7 +7,7 @@ import { useFonts, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700
 
 export default function RootLayout() {
   const { user, deviceId, logout, checkSession } = useAuthStore();
-  const { checkSessionValidity } = useDatabaseStore();
+  const { checkSessionValidity, syncAll } = useDatabaseStore();
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -21,8 +21,18 @@ export default function RootLayout() {
     // Wait for the navigation to be mounted before routing
     setTimeout(() => {
       setIsReady(true);
+      syncAll(); // Initial sync of data
     }, 100);
-  }, []);
+
+    // Como Supabase Realtime requiere configuración en el panel de control de la DB
+    // que actualmente está deshabilitada por defecto, implementamos un polling
+    // cada 5 segundos para mantener las pantallas siempre actualizadas de forma automática.
+    const interval = setInterval(() => {
+      syncAll();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [syncAll]);
 
   useEffect(() => {
     if (!isReady) return;

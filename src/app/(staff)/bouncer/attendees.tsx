@@ -9,8 +9,8 @@ export default function AttendeesScreen() {
   const [search, setSearch] = useState('');
 
   const ticketsArray = (Object.values(tickets) as Ticket[]).filter(t => 
-    t.buyerName.toLowerCase().includes(search.toLowerCase()) || 
-    t.qrCode.toLowerCase().includes(search.toLowerCase())
+    t.buyer_name?.toLowerCase().includes(search.toLowerCase()) || 
+    t.order_id?.toLowerCase().includes(search.toLowerCase())
   );
 
   const [showModal, setShowModal] = useState(false);
@@ -25,7 +25,7 @@ export default function AttendeesScreen() {
 
   const confirmCheckIn = async () => {
     if (selectedTicket && checkInQty > 0) {
-      await processScan(selectedTicket.qrCode, checkInQty);
+      await processScan(selectedTicket.order_id, checkInQty);
       setShowModal(false);
     }
   };
@@ -50,15 +50,15 @@ export default function AttendeesScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingBottom: 40 }}
         renderItem={({ item }) => {
-          const remaining = item.capacity - item.used;
+          const remaining = item.accesos_restantes;
           const isComplete = remaining === 0;
 
           return (
             <View style={[styles.card, item.status === 'invalid' && { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }]}>
               <View style={styles.cardContent}>
-                <Text style={styles.name}>{item.buyerName}</Text>
-                <Text style={styles.meta}>Código: {item.qrCode}</Text>
-                <Text style={styles.meta}>Ingresos: {item.used} / {item.capacity}</Text>
+                <Text style={styles.name}>{item.buyer_name}</Text>
+                <Text style={styles.meta}>Código: {item.order_id}</Text>
+                <Text style={styles.meta}>Ingresos: {item.total_accesos - item.accesos_restantes} / {item.total_accesos}</Text>
                 
                 {item.status === 'invalid' ? (
                   <View style={[styles.completeTag, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
@@ -95,14 +95,14 @@ export default function AttendeesScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Check-in Manual</Text>
-              <Text style={styles.modalDesc}>¿Cuántas personas van a ingresar ahora del grupo de {selectedTicket.buyerName}?</Text>
+              <Text style={styles.modalDesc}>¿Cuántas personas van a ingresar ahora del grupo de {selectedTicket.buyer_name}?</Text>
               
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24, gap: 12 }}>
                 <TouchableOpacity onPress={() => setCheckInQty(Math.max(1, checkInQty-1))} style={styles.qtyBtn}>
                   <Text style={{ color: '#231e1a', fontSize: 20 }}>-</Text>
                 </TouchableOpacity>
                 <Text style={{ color: '#231e1a', fontSize: 20, fontFamily: 'NunitoSans_600SemiBold' }}>{checkInQty}</Text>
-                <TouchableOpacity onPress={() => setCheckInQty(Math.min(selectedTicket.capacity - selectedTicket.used, checkInQty+1))} style={styles.qtyBtn}>
+                <TouchableOpacity onPress={() => setCheckInQty(Math.min(selectedTicket.accesos_restantes, checkInQty+1))} style={styles.qtyBtn}>
                   <Text style={{ color: '#231e1a', fontSize: 20 }}>+</Text>
                 </TouchableOpacity>
               </View>

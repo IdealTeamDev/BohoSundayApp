@@ -183,7 +183,7 @@ export default function StaffManagerScreen() {
         <ActivityIndicator size="large" color="#47311f" />
       ) : (
         staff.map((member: StaffMember) => (
-        <View key={member.id} style={[styles.card, !member.isActive && { opacity: 0.5 }]}>
+        <View key={member.id} style={[styles.card, !member.is_active && { opacity: 0.5 }]}>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
               <Text style={styles.name}>{member.name}</Text>
@@ -195,13 +195,13 @@ export default function StaffManagerScreen() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <KeyRound color="#686a54" size={14} />
-              <Text style={styles.meta}> {member.username} (PIN: {member.pin})</Text>
+              <Text style={styles.meta}> {member.username} (PIN: {member.pin_hash})</Text>
             </View>
           </View>
           
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             <Switch
-              value={member.isActive}
+              value={member.is_active}
               onValueChange={() => {}}
               trackColor={{ false: '#bdb39b', true: '#47311f' }}
               thumbColor="#f4efe9"

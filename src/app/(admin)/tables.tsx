@@ -17,7 +17,7 @@ export default function TablesManagerScreen() {
 
   const handleAdd = () => {
     if (newTableName.trim() !== '') {
-      addTable(newTableName, parseInt(newCapacity) || 10, parseFloat(newPrice) || 0);
+      addTable(newTableName, parseInt(newCapacity) || 10, newPrice);
       setNewTableName('');
       setNewPrice('');
     }
@@ -126,11 +126,11 @@ export default function TablesManagerScreen() {
           {tables.map(table => (
             <TouchableOpacity 
               key={table.id} 
-              style={[styles.gridItem, { backgroundColor: getTableColor(table.status) }]}
+              style={[styles.gridItem, { backgroundColor: getTableColor(table.available ? 'available' : 'occupied') }]}
               onPress={() => openTableDetails(table)}
             >
               <Text style={styles.gridItemTitle} numberOfLines={1}>{table.name}</Text>
-              <Text style={styles.gridItemMeta}>{table.capacity} pax</Text>
+              <Text style={styles.gridItemMeta}>{table.persons} pax</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -141,7 +141,7 @@ export default function TablesManagerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             {selectedTable && (() => {
-              const ticket = getTicketForTable(selectedTable.ticketId);
+              const ticket = getTicketForTable(selectedTable.order_id);
               
               return (
                 <>
@@ -154,15 +154,15 @@ export default function TablesManagerScreen() {
 
                   <View style={{ marginBottom: 24 }}>
                     <Text style={styles.infoLabel}>Estado Actual:</Text>
-                    <Text style={[styles.infoValue, { color: getTableColor(selectedTable.status) }]}>
-                      {selectedTable.status === 'available' ? 'DISPONIBLE PARA VENTA' : selectedTable.status === 'reserved' ? 'RESERVADA (ESPERANDO)' : 'OCUPADA'}
+                    <Text style={[styles.infoValue, { color: getTableColor(selectedTable.available ? 'available' : 'occupied') }]}>
+                      {selectedTable.available ? 'DISPONIBLE PARA VENTA' : 'OCUPADA'}
                     </Text>
                   </View>
 
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
                     <View>
                       <Text style={styles.infoLabel}>Aforo Total</Text>
-                      <Text style={styles.infoValue}>{selectedTable.capacity} Personas</Text>
+                      <Text style={styles.infoValue}>{selectedTable.persons} Personas</Text>
                     </View>
                     <View>
                       <Text style={styles.infoLabel}>Precio Base</Text>
@@ -174,16 +174,16 @@ export default function TablesManagerScreen() {
                     <View style={styles.ticketBox}>
                       <Text style={styles.ticketBoxTitle}>Información de Reserva</Text>
                       <Text style={styles.infoLabel}>Comprador:</Text>
-                      <Text style={styles.infoValue}>{ticket.buyerName} {ticket.phone ? `(${ticket.phone})` : ''}</Text>
+                      <Text style={styles.infoValue}>{ticket.buyer_name} {ticket.buyer_phone ? `(${ticket.buyer_phone})` : ''}</Text>
                       
                       <View style={styles.capacityProgress}>
                         <Users color="#686a54" size={20} style={{ marginRight: 8 }} />
                         <Text style={styles.progressText}>
-                          Han llegado: {ticket.used} / {ticket.capacity}
+                          Han llegado: {ticket.total_accesos - ticket.accesos_restantes} / {ticket.total_accesos}
                         </Text>
                       </View>
 
-                      {!isViewer && (selectedTable.status === 'reserved' || selectedTable.status === 'occupied') && (
+                      {!isViewer && (!selectedTable.available) && (
                         <TouchableOpacity style={styles.revokeBtn} onPress={handleRevoke}>
                           <RotateCcw color="#fff" size={20} style={{ marginRight: 8 }} />
                           <Text style={styles.revokeBtnText}>Liberar Mesa / Reventa</Text>

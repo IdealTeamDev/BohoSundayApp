@@ -11,15 +11,15 @@ export interface StaffMember {
   id: string;
   name: string;
   username: string;
-  pin: string;
-  role: 'bouncer' | 'viewer';
-  isActive: boolean;
+  pin_hash?: string;
+  role: 'bouncer' | 'admin' | 'viewer';
+  is_active: boolean;
   pushToken?: string;
 }
 
 export interface Product {
-  id: string; // e.g., 'early', 'b_vip', 't_diamante'
-  name: string; // e.g., 'Early Bird', 'Cama VIP'
+  id: string;
+  name: string;
   type: 'ticket' | 'bed' | 'table';
   basePrice: number;
 }
@@ -33,17 +33,31 @@ export interface Tier {
 
 export interface Ticket {
   id: string;
-  qrCode: string;
-  buyerName: string;
-  phone?: string;
-  capacity: number;
-  used: number;
-  zoneId?: string;
-  tableId?: string;
-  ticketType: string;
-  tierId?: string; // The stage when it was bought
-  status: 'valid' | 'used' | 'invalid';
-  createdAt?: number;
+  order_id: string;
+  ticket_id: string;
+  ticket_name: string;
+  ticket_number: number;
+  zone: string;
+  buyer_name: string;
+  buyer_email: string;
+  buyer_phone?: string;
+  total_accesos: number;
+  accesos_restantes: number;
+  status: 'paid' | 'used' | 'invalid';
+  checksum: string;
+  payment_ref: string;
+  created_at: string;
+  ticket_price: string;
+}
+
+export interface Table {
+  id: string;
+  zone: string;
+  name: string;
+  persons: number;
+  price: string;
+  available: boolean;
+  order_id?: string; // Links to the purchased ticket if occupied
 }
 
 export interface Zone {
@@ -51,14 +65,4 @@ export interface Zone {
   name: string;
   capacity: number;
   currentOccupancy: number;
-}
-
-export interface Table {
-  id: string;
-  zoneId: string;
-  name: string;
-  capacity: number;
-  price?: number;
-  status: 'available' | 'reserved' | 'occupied';
-  ticketId?: string;
 }
