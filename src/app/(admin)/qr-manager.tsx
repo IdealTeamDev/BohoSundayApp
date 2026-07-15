@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking, Platform } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Plus, X, Share2, MessageCircle } from 'lucide-react-native';
+import { Plus, X, Share2, MessageCircle, Search, Filter } from 'lucide-react-native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Ticket } from '../../types';
@@ -24,7 +24,25 @@ export default function QRManagerScreen() {
   // Modal Edit state
   const [editPhone, setEditPhone] = useState('');
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'used' | 'available'>('all');
+
   const ticketsArr = Object.values(tickets || {}).sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+  
+  const filteredTickets = ticketsArr.filter(t => {
+    const searchMatch = t.buyer_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        (t.buyer_phone || '').includes(searchQuery) || 
+                        t.order_id.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const isUsed = t.accesos_restantes === 0;
+    const isAvailable = t.accesos_restantes > 0;
+    
+    const statusMatch = filterStatus === 'all' || 
+                        (filterStatus === 'used' && isUsed) || 
+                        (filterStatus === 'available' && isAvailable);
+
+    return searchMatch && statusMatch;
+  });
   
   const activeTier = getActiveTier();
   const availableProducts = getFusedProductsForActiveTier();
@@ -113,28 +131,80 @@ export default function QRManagerScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Historial de Códigos QR</Text>
-        
-        {ticketsArr.length === 0 ? (
-          <Text style={styles.emptyText}>No hay tickets creados aún.</Text>
-        ) : (
-          ticketsArr.map(ticket => (
-            <TouchableOpacity key={ticket.id} style={styles.ticketCard} onPress={() => openQrModal(ticket)}>
-              <View style={styles.ticketInfo}>
-                <Text style={styles.ticketName}>{ticket.buyer_name}</Text>
-                <Text style={styles.ticketMeta}>Teléfono: {ticket.buyer_phone || 'N/A'}</Text>
-                <Text style={styles.ticketMeta}>Tipo: {availableProducts.find(p => p.id === ticket.ticket_name)?.name || ticket.ticket_name?.toUpperCase()}</Text>
-                <Text style={styles.ticketMeta}>Zona: {ticket.zone} #{ticket.ticket_number}</Text>
-                <Text style={styles.ticketMeta}>Aforo: {ticket.total_accesos} (Disponibles: {ticket.accesos_restantes})</Text>
-              </View>
-              <View style={styles.qrPreviewContainer}>
-                <Image 
-                  source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${ticket.order_id}` }} 
-                  style={styles.qrPreview} 
-                />
-              </View>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Gestor de QR</Text>
+          <Text style={styles.headerSubtitle}>Administra las entradas y reservas</Text>
+        </View>
+
+        {/* FILTERS SECTION */}
+        <View style={styles.filterSection}>
+          <View style={styles.searchContainer}>
+            <Search color="#8b8378" size={20} style={styles.searchIcon} />
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Buscar por nombre, teléfono o ID..." 
+              placeholderTextColor="#8b8378"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+
+          <View style={styles.filterRow}>
+            <TouchableOpacity 
+              style={[styles.filterBtn, filterStatus === 'all' && styles.filterBtnActive]} 
+              onPress={() => setFilterStatus('all')}
+            >
+              <Text style={[styles.filterBtnText, filterStatus === 'all' && styles.filterBtnTextActive]}>Todos</Text>
             </TouchableOpacity>
-          ))
+            <TouchableOpacity 
+              style={[styles.filterBtn, filterStatus === 'available' && styles.filterBtnActive]} 
+              onPress={() => setFilterStatus('available')}
+            >
+              <Text style={[styles.filterBtnText, filterStatus === 'available' && styles.filterBtnTextActive]}>Disponibles</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.filterBtn, filterStatus === 'used' && styles.filterBtnActive]} 
+              onPress={() => setFilterStatus('used')}
+            >
+              <Text style={[styles.filterBtnText, filterStatus === 'used' && styles.filterBtnTextActive]}>Usados</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {filteredTickets.length === 0 ? (
+          <Text style={styles.emptyText}>No se encontraron tickets.</Text>
+        ) : (
+          filteredTickets.map(ticket => {
+            const isUsed = ticket.accesos_restantes === 0;
+            return (
+              <TouchableOpacity key={ticket.id} style={[styles.ticketCard, isUsed && { opacity: 0.6 }]} onPress={() => openQrModal(ticket)}>
+                <View style={styles.ticketInfo}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <Text style={styles.ticketName}>{ticket.buyer_name}</Text>
+                    {isUsed && (
+                      <View style={[styles.statusBadge, { backgroundColor: '#fff0f0' }]}>
+                        <Text style={[styles.statusBadgeText, { color: '#ff4d4d' }]}>AGOTADO</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.ticketMeta}>Teléfono: {ticket.buyer_phone || 'N/A'}</Text>
+                  <Text style={styles.ticketMeta}>Tipo: {availableProducts.find(p => p.id === ticket.ticket_name)?.name || ticket.ticket_name?.toUpperCase()}</Text>
+                  {ticket.zone && ticket.ticket_number && (
+                    <Text style={styles.ticketMeta}>Zona: {ticket.zone} #{ticket.ticket_number}</Text>
+                  )}
+                  <Text style={[styles.ticketMeta, { color: '#1a1614', fontFamily: 'NunitoSans_700Bold', marginTop: 4 }]}>
+                    Aforo: {ticket.total_accesos} (Disponibles: {ticket.accesos_restantes})
+                  </Text>
+                </View>
+                <View style={styles.qrPreviewContainer}>
+                  <Image 
+                    source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${ticket.order_id}` }} 
+                    style={styles.qrPreview} 
+                  />
+                </View>
+              </TouchableOpacity>
+            )
+          })
         )}
       </ScrollView>
 
@@ -211,7 +281,7 @@ export default function QRManagerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.qrModalContent}>
             <TouchableOpacity style={styles.closeQrBtn} onPress={() => setQrModalVisible(false)}>
-              <X color="#231e1a" size={24} />
+              <X color="#1a1614" size={24} />
             </TouchableOpacity>
             
             {selectedTicket && (
@@ -236,13 +306,13 @@ export default function QRManagerScreen() {
                 </View>
                 
                 <TouchableOpacity style={styles.shareBtn} onPress={shareViaWhatsApp}>
-                  <MessageCircle color="#f4efe9" size={20} style={{ marginRight: 8 }} />
+                  <MessageCircle color="#fff" size={20} style={{ marginRight: 8 }} />
                   <Text style={styles.shareBtnText}>Enviar por WhatsApp</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#d9d1c0', marginTop: 12 }]} onPress={shareQrCode}>
-                  <Share2 color="#231e1a" size={20} style={{ marginRight: 8 }} />
-                  <Text style={[styles.shareBtnText, { color: '#231e1a' }]}>Descargar / Compartir Imagen</Text>
+                <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#f0ebe1', marginTop: 12 }]} onPress={shareQrCode}>
+                  <Share2 color="#1a1614" size={20} style={{ marginRight: 8 }} />
+                  <Text style={[styles.shareBtnText, { color: '#1a1614' }]}>Descargar QR</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -256,45 +326,111 @@ export default function QRManagerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#f8f5f1',
   },
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 100,
   },
-  title: {
-    color: '#231e1a',
-    fontSize: 18,
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 16,
-    marginTop: 8,
-    textTransform: 'uppercase',
+  header: { marginBottom: 24, marginTop: 8 },
+  headerTitle: { color: '#1a1614', fontSize: 28, fontFamily: 'NunitoSans_800ExtraBold', letterSpacing: -0.5 },
+  headerSubtitle: { color: '#8b8378', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
+  
+  filterSection: {
+    marginBottom: 24,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 12,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#1a1614',
+    fontFamily: 'NunitoSans_600SemiBold',
+    fontSize: 15,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
+  filterBtnActive: {
+    backgroundColor: '#1a1614',
+    borderColor: '#1a1614',
+  },
+  filterBtnText: {
+    color: '#8b8378',
+    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 13,
+  },
+  filterBtnTextActive: {
+    color: '#ffffff',
+  },
+  
   emptyText: {
-    color: '#686a54',
+    color: '#8b8378',
     textAlign: 'center',
     marginTop: 40,
+    fontFamily: 'NunitoSans_600SemiBold',
   },
   ticketCard: {
-    backgroundColor: '#d9d1c0',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: '#bdb39b',
+    borderColor: 'rgba(0,0,0,0.03)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   ticketInfo: {
     flex: 1,
   },
   ticketName: {
-    color: '#231e1a',
-    fontSize: 16,
-    fontFamily: 'NunitoSans_700Bold',
-    marginBottom: 4,
+    color: '#1a1614',
+    fontSize: 18,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: -0.3,
+  },
+  statusBadge: {
+    marginLeft: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: 0.5,
   },
   ticketMeta: {
-    color: '#686a54',
+    color: '#8b8378',
     fontSize: 13,
     marginBottom: 2,
     fontFamily: 'NunitoSans_600SemiBold',
@@ -303,27 +439,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
+    backgroundColor: '#f8f5f1',
+    padding: 8,
+    borderRadius: 12,
   },
   qrPreview: {
-    width: 70,
-    height: 70,
+    width: 64,
+    height: 64,
     borderRadius: 8,
   },
   fab: {
     position: 'absolute',
     bottom: 24,
     right: 24,
-    backgroundColor: '#686a54',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    backgroundColor: '#1a1614',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   modalOverlay: {
     flex: 1,
@@ -331,9 +470,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#f4efe9',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: '#f8f5f1',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     height: '85%',
     padding: 24,
   },
@@ -341,114 +480,126 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 20,
-    color: '#231e1a',
-    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 22,
+    color: '#1a1614',
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: -0.5,
   },
   modalForm: {
     flex: 1,
   },
   label: {
     fontSize: 14,
-    color: '#686a54',
+    color: '#8b8378',
     marginBottom: 8,
-    fontFamily: 'NunitoSans_600SemiBold',
+    fontFamily: 'NunitoSans_700Bold',
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#bdb39b',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontFamily: 'NunitoSans_400Regular',
-    color: '#231e1a',
+    borderColor: '#f0ebe1',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    fontFamily: 'NunitoSans_600SemiBold',
+    color: '#1a1614',
+    fontSize: 15,
   },
   pickerContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   pickerItem: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#bdb39b',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderColor: '#f0ebe1',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   pickerItemActive: {
-    backgroundColor: '#686a54',
-    borderColor: '#686a54',
+    backgroundColor: '#1a1614',
+    borderColor: '#1a1614',
   },
   pickerItemText: {
-    color: '#686a54',
-    fontFamily: 'NunitoSans_600SemiBold',
+    color: '#8b8378',
+    fontFamily: 'NunitoSans_700Bold',
   },
   pickerItemTextActive: {
-    color: '#f4efe9',
+    color: '#ffffff',
   },
   submitBtn: {
-    backgroundColor: '#47311f',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#1a1614',
+    padding: 18,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 40,
   },
   submitBtnText: {
-    color: '#f4efe9',
+    color: '#ffffff',
     fontSize: 16,
     fontFamily: 'NunitoSans_700Bold',
   },
   qrModalContent: {
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#f8f5f1',
     margin: 24,
     marginTop: '30%',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 32,
+    padding: 32,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   closeQrBtn: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: 20,
+    right: 20,
     zIndex: 10,
+    backgroundColor: '#ffffff',
+    padding: 8,
+    borderRadius: 20,
   },
   qrModalTitle: {
-    fontSize: 22,
-    color: '#231e1a',
-    fontFamily: 'NunitoSans_700Bold',
-    marginTop: 8,
+    fontSize: 24,
+    color: '#1a1614',
+    fontFamily: 'NunitoSans_800ExtraBold',
+    marginTop: 16,
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   qrModalSub: {
     fontSize: 14,
-    color: '#686a54',
+    color: '#8b8378',
     fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   qrLarge: {
     width: 250,
     height: 250,
-    marginBottom: 24,
+    marginBottom: 32,
+    borderRadius: 16,
   },
   shareBtn: {
-    backgroundColor: '#686a54',
+    backgroundColor: '#1a1614',
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     width: '100%',
     justifyContent: 'center',
   },
   shareBtnText: {
-    color: '#f4efe9',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 15,
     fontFamily: 'NunitoSans_700Bold',
   }
 });

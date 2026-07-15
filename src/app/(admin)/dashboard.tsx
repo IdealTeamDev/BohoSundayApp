@@ -143,9 +143,12 @@ export default function AdminDashboard() {
     >
       <View style={styles.content}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Panel General</Text>
+          <View>
+            <Text style={styles.title}>Panel General</Text>
+            <Text style={styles.subtitle}>Gestión de productos y etapas</Text>
+          </View>
           <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
-            <RefreshCw color="#231e1a" size={20} />
+            <RefreshCw color="#1a1614" size={20} />
           </TouchableOpacity>
         </View>
 
@@ -156,76 +159,88 @@ export default function AdminDashboard() {
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : stats ? (
-          <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: '#47311f' }]}>
-              <DollarSign color="#f4efe9" size={32} style={styles.statIcon} />
-              <Text style={styles.statLabelLight}>Ingresos Totales</Text>
-              <Text style={styles.statValueLight}>{formatCurrency(stats.totalRevenue)}</Text>
+          <View style={styles.kpiContainer}>
+            <View style={[styles.kpiCardPrimary]}>
+              <View style={styles.kpiHeader}>
+                <Text style={[styles.kpiTitle, { color: 'rgba(255,255,255,0.8)' }]}>Ingresos Totales</Text>
+                <View style={styles.iconCircleLight}>
+                  <DollarSign color="#fff" size={16} />
+                </View>
+              </View>
+              <Text style={[styles.kpiValue, { color: '#fff' }]}>{formatCurrency(stats.totalRevenue)}</Text>
             </View>
 
-            <View style={[styles.statCard, { backgroundColor: '#686a54' }]}>
-              <Ticket color="#f4efe9" size={32} style={styles.statIcon} />
-              <Text style={styles.statLabelLight}>Boletas Vendidas (Reservas)</Text>
-              <Text style={styles.statValueLight}>{stats.totalSold}</Text>
-            </View>
+            <View style={styles.kpiRow}>
+              <View style={styles.kpiCardSmall}>
+                <View style={styles.kpiHeader}>
+                  <Text style={styles.kpiTitle}>Reservas</Text>
+                  <Ticket color="#a39a85" size={16} />
+                </View>
+                <Text style={styles.kpiValueSmall}>{stats.totalSold}</Text>
+              </View>
 
-            <View style={[styles.statCard, { backgroundColor: '#d9d1c0' }]}>
-              <Users color="#231e1a" size={32} style={styles.statIcon} />
-              <Text style={styles.statLabelDark}>Check-ins (Gente que ingresó)</Text>
-              <Text style={styles.statValueDark}>{stats.totalCheckIns}</Text>
+              <View style={styles.kpiCardSmall}>
+                <View style={styles.kpiHeader}>
+                  <Text style={styles.kpiTitle}>Check-ins</Text>
+                  <Users color="#a39a85" size={16} />
+                </View>
+                <Text style={styles.kpiValueSmall}>{stats.totalCheckIns}</Text>
+              </View>
             </View>
           </View>
         ) : null}
 
         {/* PRODUCT CATALOG SECTION */}
-        <View style={styles.mockSection}>
-          <Text style={styles.title}>Catálogo de Productos Base ({products.length})</Text>
-          <Text style={[styles.infoText, { marginBottom: 16 }]}>Define tus camas, mesas y boletos una sola vez. Estos precios se usarán por defecto a menos que los modifiques en una Etapa específica.</Text>
-          
-          <View style={styles.form}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TextInput 
-                style={[styles.input, { flex: 2, marginBottom: 0 }]} 
-                placeholder="Nombre (Ej. Cama VIP)" 
-                value={newProductName} 
-                onChangeText={setNewProductName} 
-              />
-              <TextInput 
-                style={[styles.input, { flex: 1, marginBottom: 0 }]} 
-                placeholder="Precio $" 
-                keyboardType="numeric"
-                value={newProductPrice} 
-                onChangeText={setNewProductPrice} 
-              />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', flex: 1, gap: 4 }}>
-                {['ticket', 'bed', 'table'].map(t => (
-                  <TouchableOpacity 
-                    key={t}
-                    onPress={() => setNewProductType(t as any)}
-                    style={{ padding: 12, borderRadius: 8, flex: 1, alignItems: 'center', backgroundColor: newProductType === t ? '#47311f' : '#d9d1c0' }}
-                  >
-                    <Text style={{ color: newProductType === t ? '#fff' : '#231e1a', fontSize: 12, fontFamily: 'NunitoSans_600SemiBold' }}>
-                      {t === 'ticket' ? 'Entrada' : t === 'bed' ? 'Cama' : 'Mesa'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <TouchableOpacity onPress={handleAddProduct} style={{ backgroundColor: '#686a54', width: 50, height: 50, borderRadius: 8, alignItems: 'center', justifyContent: 'center' }}>
-                <Plus color="#fff" size={24} />
-              </TouchableOpacity>
-            </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Catálogo de Productos Base ({products.length})</Text>
+          <Text style={styles.sectionSubtitle}>Define precios predeterminados para el evento.</Text>
+        </View>
+        
+        <View style={styles.formCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TextInput 
+              style={[styles.input, { flex: 2 }]} 
+              placeholder="Nombre (Ej. Cama VIP)" 
+              value={newProductName} 
+              onChangeText={setNewProductName} 
+            />
+            <TextInput 
+              style={[styles.input, { flex: 1 }]} 
+              placeholder="Precio $" 
+              keyboardType="numeric"
+              value={newProductPrice} 
+              onChangeText={setNewProductPrice} 
+            />
           </View>
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', marginTop: 12 }}>
+            <View style={{ flexDirection: 'row', flex: 1, gap: 8 }}>
+              {['ticket', 'bed', 'table'].map(t => (
+                <TouchableOpacity 
+                  key={t}
+                  onPress={() => setNewProductType(t as any)}
+                  style={[styles.typeSelectBtn, newProductType === t && styles.typeSelectBtnActive]}
+                >
+                  <Text style={[styles.typeSelectBtnText, newProductType === t && styles.typeSelectBtnTextActive]}>
+                    {t === 'ticket' ? 'Entrada' : t === 'bed' ? 'Cama' : 'Mesa'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity onPress={handleAddProduct} style={styles.addBtnSmall}>
+              <Plus color="#fff" size={20} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-          {products.map(p => (
-            <View key={p.id} style={styles.card}>
+        <View style={styles.listContainer}>
+          {products.map((p, idx) => (
+            <View key={p.id} style={[styles.listItem, idx === products.length - 1 && { borderBottomWidth: 0 }]}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.tableName}>{p.name}</Text>
-                <Text style={styles.tableMeta}>{p.type.toUpperCase()}</Text>
+                <Text style={styles.listItemName}>{p.name}</Text>
+                <Text style={styles.listItemMeta}>{p.type.toUpperCase()}</Text>
               </View>
-              <Text style={[styles.tableName, { marginRight: 16, color: '#47311f' }]}>${p.basePrice}</Text>
-              <TouchableOpacity onPress={() => removeProduct(p.id)} style={[styles.deleteBtn, { backgroundColor: '#ffdbdb' }]}>
+              <Text style={styles.listItemValue}>${p.basePrice}</Text>
+              <TouchableOpacity onPress={() => removeProduct(p.id)} style={styles.deleteBtnIcon}>
                 <Trash2 color="#ff4d4d" size={20} />
               </TouchableOpacity>
             </View>
@@ -233,31 +248,36 @@ export default function AdminDashboard() {
         </View>
 
         {/* TIERS MANAGEMENT SECTION */}
-        <View style={styles.mockSection}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={styles.title}>Etapas de Venta ({tiers.length})</Text>
-            <TouchableOpacity style={{ backgroundColor: '#47311f', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center' }} onPress={startNewTier}>
-              <Plus color="#fff" size={16} style={{ marginRight: 4 }} />
-              <Text style={{ color: '#fff', fontFamily: 'NunitoSans_700Bold' }}>Nueva Etapa</Text>
-            </TouchableOpacity>
+        <View style={[styles.sectionHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <View>
+            <Text style={styles.sectionTitle}>Etapas de Venta ({tiers.length})</Text>
+            <Text style={styles.sectionSubtitle}>Gestiona fechas y excepciones de precios.</Text>
           </View>
+          <TouchableOpacity style={styles.primaryActionBtn} onPress={startNewTier}>
+            <Plus color="#fff" size={16} style={{ marginRight: 4 }} />
+            <Text style={styles.primaryActionBtnText}>Nueva</Text>
+          </TouchableOpacity>
+        </View>
 
+        <View style={styles.listContainer}>
           {tiers.length === 0 ? (
-            <Text style={styles.infoText}>No hay etapas creadas.</Text>
+            <View style={{ padding: 24, alignItems: 'center' }}>
+              <Text style={styles.infoText}>No hay etapas creadas.</Text>
+            </View>
           ) : (
-            tiers.map(item => (
-              <View key={item.id} style={styles.card}>
+            tiers.map((item, idx) => (
+              <View key={item.id} style={[styles.listItem, idx === tiers.length - 1 && { borderBottomWidth: 0 }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.tableName}>{item.name}</Text>
-                  <Text style={styles.tableMeta}>{Object.keys(item.priceOverrides).length} precios modificados</Text>
-                  <Text style={[styles.tableMeta, { marginTop: 4, color: '#47311f' }]}>Cierra: {new Date(item.endDate).toLocaleString()}</Text>
+                  <Text style={styles.listItemName}>{item.name}</Text>
+                  <Text style={styles.listItemMeta}>{Object.keys(item.priceOverrides).length} precios modificados</Text>
+                  <Text style={[styles.listItemMeta, { marginTop: 4, color: '#1a1614', fontFamily: 'NunitoSans_700Bold' }]}>Cierra: {new Date(item.endDate).toLocaleString()}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity onPress={() => startEditTier(item)} style={[styles.deleteBtn, { backgroundColor: '#686a54' }]}>
-                    <Edit2 color="#f4efe9" size={20} />
+                  <TouchableOpacity onPress={() => startEditTier(item)} style={styles.editBtnIcon}>
+                    <Edit2 color="#1a1614" size={20} />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => removeTier(item.id)} style={[styles.deleteBtn, { backgroundColor: '#47311f' }]}>
-                    <Trash2 color="#f4efe9" size={20} />
+                  <TouchableOpacity onPress={() => removeTier(item.id)} style={styles.deleteBtnIcon}>
+                    <Trash2 color="#ff4d4d" size={20} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -340,10 +360,11 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#f8f5f1',
   },
   content: {
-    padding: 24,
+    padding: 20,
+    paddingBottom: 40,
   },
   headerRow: {
     flexDirection: 'row',
@@ -353,125 +374,234 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   title: {
-    color: '#231e1a',
-    fontSize: 22,
-    fontFamily: 'NunitoSans_700Bold',
-    textTransform: 'uppercase',
+    color: '#1a1614',
+    fontSize: 28,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    color: '#8b8378',
+    fontSize: 15,
+    fontFamily: 'NunitoSans_600SemiBold',
+    marginTop: 4,
   },
   refreshBtn: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: '#d9d1c0',
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
   infoText: {
-    color: '#686a54',
-    fontSize: 16,
+    color: '#8b8378',
+    fontSize: 15,
     fontFamily: 'NunitoSans_400Regular',
   },
   errorBox: {
-    backgroundColor: '#ffdbdb',
+    backgroundColor: '#fff0f0',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ff4d4d',
+    borderColor: '#ffd6d6',
+    marginBottom: 24,
   },
   errorText: {
     color: '#ff4d4d',
     fontFamily: 'NunitoSans_600SemiBold',
   },
-  statsGrid: {
-    flexDirection: 'column',
-    gap: 16,
-  },
-  statCard: {
-    borderRadius: 16,
-    padding: 24,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  statIcon: {
-    position: 'absolute',
-    right: 24,
-    top: 24,
-    opacity: 0.2,
-  },
-  statLabelLight: {
-    color: '#f4efe9',
-    opacity: 0.8,
-    fontSize: 14,
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 8,
-  },
-  statValueLight: {
-    color: '#f4efe9',
-    fontSize: 32,
-    fontFamily: 'NunitoSans_700Bold',
-  },
-  statLabelDark: {
-    color: '#231e1a',
-    opacity: 0.8,
-    fontSize: 14,
-    fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 8,
-  },
-  statValueDark: {
-    color: '#231e1a',
-    fontSize: 32,
-    fontFamily: 'NunitoSans_700Bold',
-  },
-  form: {
-    flexDirection: 'column',
+  kpiContainer: {
     gap: 12,
-    marginBottom: 32,
   },
-  input: {
-    backgroundColor: '#d9d1c0',
+  kpiRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  kpiCardPrimary: {
+    backgroundColor: '#1a1614',
+    padding: 24,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  kpiCardSmall: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: '#bdb39b',
-    borderRadius: 8,
-    color: '#231e1a',
-    paddingHorizontal: 8,
-    height: 50,
-    fontFamily: 'NunitoSans_400Regular',
+    borderColor: 'rgba(0,0,0,0.03)',
   },
-  addBtn: {
-    backgroundColor: '#686a54',
-    width: 50,
-    height: 50,
-    borderRadius: 8,
+  kpiHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  kpiTitle: {
+    color: '#8b8378',
+    fontSize: 12,
+    fontFamily: 'NunitoSans_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  iconCircleLight: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  card: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#bdb39b',
-    borderRadius: 8,
+  kpiValue: {
+    fontSize: 36,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: -1,
+  },
+  kpiValueSmall: {
+    color: '#1a1614',
+    fontSize: 24,
+    fontFamily: 'NunitoSans_800ExtraBold',
+  },
+  sectionHeader: {
+    marginTop: 32,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    color: '#1a1614',
+    fontSize: 18,
+    fontFamily: 'NunitoSans_700Bold',
+  },
+  sectionSubtitle: {
+    color: '#8b8378',
+    fontSize: 13,
+    fontFamily: 'NunitoSans_400Regular',
+    marginTop: 2,
+  },
+  formCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
     padding: 16,
-    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: '#f8f5f1',
+    borderWidth: 1,
+    borderColor: '#f0ebe1',
+    borderRadius: 12,
+    color: '#1a1614',
+    paddingHorizontal: 16,
+    height: 48,
+    fontFamily: 'NunitoSans_600SemiBold',
+    fontSize: 15,
+  },
+  typeSelectBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: '#f8f5f1',
+    borderWidth: 1,
+    borderColor: '#f0ebe1',
+  },
+  typeSelectBtnActive: {
+    backgroundColor: '#1a1614',
+    borderColor: '#1a1614',
+  },
+  typeSelectBtnText: {
+    color: '#8b8378',
+    fontSize: 13,
+    fontFamily: 'NunitoSans_700Bold',
+  },
+  typeSelectBtnTextActive: {
+    color: '#ffffff',
+  },
+  addBtnSmall: {
+    backgroundColor: '#c89d71',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
+  listItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0ebe1',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  tableName: {
-    color: '#231e1a',
+  listItemName: {
+    color: '#1a1614',
     fontSize: 16,
+    fontFamily: 'NunitoSans_700Bold',
+    marginBottom: 2,
+  },
+  listItemMeta: {
+    color: '#8b8378',
+    fontSize: 13,
     fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 4,
   },
-  tableMeta: {
-    color: '#686a54',
-    fontSize: 12,
+  listItemValue: {
+    color: '#c89d71',
+    fontSize: 18,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    marginRight: 16,
   },
-  deleteBtn: {
+  editBtnIcon: {
     padding: 8,
     borderRadius: 8,
+    backgroundColor: '#f8f5f1',
   },
-  mockSection: {
-    marginTop: 40,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderColor: '#bdb39b',
+  deleteBtnIcon: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#fff0f0',
+  },
+  primaryActionBtn: {
+    backgroundColor: '#1a1614',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  primaryActionBtnText: {
+    color: '#ffffff',
+    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
@@ -479,9 +609,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#f4efe9',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: '#f8f5f1',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     height: '85%',
     padding: 24,
   },
@@ -489,31 +619,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 20,
-    color: '#231e1a',
-    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 22,
+    color: '#1a1614',
+    fontFamily: 'NunitoSans_800ExtraBold',
+    letterSpacing: -0.5,
   },
   modalForm: {
     flex: 1,
   },
   label: {
     fontSize: 14,
-    color: '#686a54',
+    color: '#8b8378',
     marginBottom: 8,
-    fontFamily: 'NunitoSans_600SemiBold',
+    fontFamily: 'NunitoSans_700Bold',
   },
   submitBtn: {
-    backgroundColor: '#47311f',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#1a1614',
+    padding: 18,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 32,
   },
   submitBtnText: {
-    color: '#f4efe9',
+    color: '#ffffff',
     fontSize: 16,
     fontFamily: 'NunitoSans_700Bold',
   },

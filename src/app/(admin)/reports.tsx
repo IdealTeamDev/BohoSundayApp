@@ -15,6 +15,7 @@ export default function ReportsScreen() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filterType, setFilterType] = useState<string>('all');
 
   const loadOrders = useCallback(() => {
     setLoading(true);
@@ -46,15 +47,19 @@ export default function ReportsScreen() {
     loadOrders();
   };
 
+  const availableTypes = Array.from(new Set(orders.map(o => o.ticketName || 'General')));
+  
+  const filteredOrders = orders.filter(o => filterType === 'all' || (o.ticketName || 'General') === filterType);
+
   // --- METRICS CALCULATION ---
-  const totalOrders = orders.length;
-  const totalCapacity = orders.reduce((acc, o) => acc + o.quantity, 0);
-  const totalArrived = orders.reduce((acc, o) => acc + (o.accessesUsed || 0), 0);
+  const totalOrders = filteredOrders.length;
+  const totalCapacity = filteredOrders.reduce((acc, o) => acc + o.quantity, 0);
+  const totalArrived = filteredOrders.reduce((acc, o) => acc + (o.accessesUsed || 0), 0);
   const overallPercentage = totalCapacity > 0 ? (totalArrived / totalCapacity) * 100 : 0;
 
   // Group by ticketName/zone
   const salesByTierMap = new Map();
-  orders.forEach(o => {
+  filteredOrders.forEach(o => {
     const key = o.ticketName || 'General';
     if (!salesByTierMap.has(key)) {
       salesByTierMap.set(key, { 
@@ -133,7 +138,7 @@ export default function ReportsScreen() {
 
   const generatePDF = async () => {
     try {
-      if (orders.length === 0) {
+      if (filteredOrders.length === 0) {
         Alert.alert('Aviso', 'No hay datos para exportar.');
         return;
       }
@@ -193,7 +198,7 @@ export default function ReportsScreen() {
                 <th>Cantidad</th>
                 <th>Ingresaron</th>
               </tr>
-              ${orders.filter(o => o.accessesUsed > 0).slice(0, 20).map(o => `
+              ${filteredOrders.filter(o => o.accessesUsed > 0).slice(0, 20).map(o => `
                 <tr>
                   <td>${o.buyerInfo?.name}</td>
                   <td>${o.ticketName}</td>
@@ -242,9 +247,29 @@ export default function ReportsScreen() {
       </View>
 
       {loading && orders.length === 0 ? (
-        <ActivityIndicator size="large" color="#47311f" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" color="#1a1614" style={{ marginTop: 40 }} />
       ) : (
         <>
+          <View style={{ marginBottom: 24 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              <TouchableOpacity 
+                style={[styles.filterBtn, filterType === 'all' && styles.filterBtnActive]} 
+                onPress={() => setFilterType('all')}
+              >
+                <Text style={[styles.filterBtnText, filterType === 'all' && styles.filterBtnTextActive]}>Todos</Text>
+              </TouchableOpacity>
+              {availableTypes.map(type => (
+                <TouchableOpacity 
+                  key={type}
+                  style={[styles.filterBtn, filterType === type && styles.filterBtnActive]} 
+                  onPress={() => setFilterType(type)}
+                >
+                  <Text style={[styles.filterBtnText, filterType === type && styles.filterBtnTextActive]}>{type}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
           {/* KPI CARDS */}
           <View style={styles.kpiContainer}>
             {showRevenue && (
@@ -429,6 +454,26 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontFamily: 'NunitoSans_800ExtraBold',
     letterSpacing: -1,
+  },
+  filterBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
+  },
+  filterBtnActive: {
+    backgroundColor: '#1a1614',
+    borderColor: '#1a1614',
+  },
+  filterBtnText: {
+    color: '#8b8378',
+    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 13,
+  },
+  filterBtnTextActive: {
+    color: '#ffffff',
   },
   kpiValueSmall: {
     color: '#1a1614',

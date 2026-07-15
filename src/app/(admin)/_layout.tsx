@@ -20,21 +20,26 @@ export default function AdminLayout() {
     <>
       <Tabs
         screenOptions={{
-          headerStyle: { backgroundColor: '#f4efe9', borderBottomWidth: 1, borderBottomColor: '#bdb39b' },
-          headerTintColor: '#47311f',
+          headerStyle: { backgroundColor: '#f8f5f1', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.03)', shadowOpacity: 0, elevation: 0 },
+          headerTintColor: '#1a1614',
           tabBarStyle: { 
-            backgroundColor: '#d9d1c0', 
-            borderTopColor: '#bdb39b',
+            backgroundColor: '#ffffff', 
+            borderTopColor: 'rgba(0,0,0,0.03)',
             paddingBottom: Math.max(insets.bottom, 15),
             paddingTop: 10,
             height: 65 + Math.max(insets.bottom, 15),
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.03,
+            shadowRadius: 10,
+            elevation: 10,
           },
           tabBarLabelStyle: {
             fontSize: 11,
-            fontFamily: 'NunitoSans_600SemiBold'
+            fontFamily: 'NunitoSans_700Bold'
           },
-          tabBarActiveTintColor: '#47311f',
-          tabBarInactiveTintColor: '#686a54',
+          tabBarActiveTintColor: '#1a1614',
+          tabBarInactiveTintColor: '#8b8378',
           headerRight: () => (
             <TouchableOpacity onPress={() => setLogoutVisible(true)} style={{ marginRight: 16 }}>
               <LogOut color="#ef4444" size={24} />
