@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal, Alert } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { formatCOP } from '../../utils/format';
 import { Trash2, Plus, X, Users, RotateCcw } from 'lucide-react-native';
 import { Table } from '../../types';
 
@@ -156,7 +157,7 @@ export default function TablesManagerScreen() {
                     </View>
                     <View>
                       <Text style={styles.infoLabel}>Precio Base</Text>
-                      <Text style={styles.infoValue}>${selectedTable.price || 0}</Text>
+                      <Text style={styles.infoValue}>{formatCOP(selectedTable.price || 0)}</Text>
                     </View>
                   </View>
 

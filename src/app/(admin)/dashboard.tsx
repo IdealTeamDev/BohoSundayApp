@@ -408,7 +408,7 @@ export default function AdminDashboard() {
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#4a4542' }}>{p.name} <Text style={{ color: '#a0978b', fontSize: 12 }}>({p.id})</Text></Text>
                           </View>
-                          <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#231e1a', marginRight: 16 }}>${p.basePrice}</Text>
+                          <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#231e1a', marginRight: 16 }}>{formatCOP(p.basePrice)}</Text>
                           <TouchableOpacity onPress={() => removeProduct(p.id, p.type as 'ticket'|'bed'|'table')} style={{ padding: 4 }}>
                             <Trash2 color="#ff4d4d" size={18} />
                           </TouchableOpacity>
@@ -553,7 +553,7 @@ export default function AdminDashboard() {
                           
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#231e1a' }}>{g.name} {g.ids.length > 1 ? `(${g.ids.length})` : ''}</Text>
-                            <Text style={{ fontFamily: 'NunitoSans_400Regular', color: '#686a54', fontSize: 12 }}>Base: ${g.basePrice}</Text>
+                            <Text style={{ fontFamily: 'NunitoSans_400Regular', color: '#686a54', fontSize: 12 }}>Base: {formatCOP(g.basePrice)}</Text>
                           </View>
   
                           {isOverridden && (

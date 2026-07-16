@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
+import { formatCOP } from '../../utils/format';
 import { FileText, Download, DollarSign, Users, Activity, Coffee } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -165,7 +166,7 @@ export default function ReportsScreen() {
       yPos += 5;
       
       const summaryBody = [];
-      if (showRevenue) summaryBody.push(['Ingresos Totales', `$${totalRevenue.toLocaleString()}`]);
+      if (showRevenue) summaryBody.push(['Ingresos Totales', formatCOP(totalRevenue)]);
       summaryBody.push(['Aforo (Ingresaron / Vendidos)', `${totalArrived} / ${totalCapacity}`]);
       summaryBody.push(['Porcentaje de Asistencia', `${Math.round(overallPercentage)}%`]);
 
@@ -186,7 +187,7 @@ export default function ReportsScreen() {
       const tiersHead = showRevenue ? ['Etapa', 'Vendidos', 'Ingresaron', 'Asistencia', 'Ingresos'] : ['Etapa', 'Vendidos', 'Ingresaron', 'Asistencia'];
       const tiersBody = salesByTier.map(t => {
         const row = [t.name, t.sold.toString(), t.entered.toString(), `${Math.round(t.enteredPercentage)}%`];
-        if (showRevenue) row.push(`$${t.revenue.toLocaleString()}`);
+        if (showRevenue) row.push(formatCOP(t.revenue));
         return row;
       });
 
