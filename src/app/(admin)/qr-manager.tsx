@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
     fontFamily: 'NunitoSans_600SemiBold',
   },
   ticketCard: {
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 12,

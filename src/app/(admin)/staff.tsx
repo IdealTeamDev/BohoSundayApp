@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#231e1a', fontSize: 18, fontFamily: 'NunitoSans_700Bold', marginBottom: 16 },
   
   formCard: { 
-    backgroundColor: '#f4efe9', 
+    backgroundColor: '#ffffff', 
     borderRadius: 24, 
     padding: 20, 
     marginBottom: 24, 
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   addBtnText: { color: '#f4efe9', fontFamily: 'NunitoSans_700Bold', marginLeft: 8 },
   
   listContainer: {
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderRadius: 24,
     padding: 8,
     shadowColor: '#000',

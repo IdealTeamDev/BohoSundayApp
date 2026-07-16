@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   },
   kpiCardSmall: {
     flex: 1,
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   listContainer: {
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderRadius: 24,
     padding: 8,
     shadowColor: '#000',

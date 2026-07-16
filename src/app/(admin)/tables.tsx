@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 24,
     marginTop: 16,
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     padding: 12,
     borderRadius: 16,
     shadowColor: '#000',
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     width: '48%',
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     padding: 16,
     borderRadius: 16,
     shadowColor: '#000',
