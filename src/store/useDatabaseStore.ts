@@ -12,7 +12,7 @@ interface DatabaseState {
   staff: StaffMember[];
 
   isOnline: boolean;
-  offlineQueue: { order_id: string; count: number }[];
+  offlineQueue: { order_id: string; count: number; staff_username: string; scanned_at: string; scan_result: string; ticket_checksum: string }[];
   activeDeviceIds: Record<string, string>;
 
   // Sync actions
@@ -21,7 +21,7 @@ interface DatabaseState {
   flushOfflineQueue: () => Promise<void>;
 
   setIsOnline: (status: boolean) => void;
-  processScan: (qrCode: string, count: number) => Promise<{ success: boolean; message: string }>;
+  processScan: (qrCode: string, count: number, staffUsername: string) => Promise<{ success: boolean; message: string }>;
   registerSession: (userId: string, deviceId: string) => void;
   checkSessionValidity: (userId: string, deviceId: string) => boolean;
 
@@ -163,31 +163,51 @@ export const useDatabaseStore = create<DatabaseState>()(
         for (let i = offlineQueue.length - 1; i >= 0; i--) {
           const scan = offlineQueue[i];
           
-          // Actually hit the endpoint or Supabase
-          const { data: currentTicket, error: fetchErr } = await supabase
-            .from('purchased_tickets')
-            .select('accesos_restantes, total_accesos')
-            .eq('order_id', scan.order_id)
-            .single();
+          // Log insertion
+          const { error: logErr } = await supabase.from('scan_logs').insert({
+            ticket_checksum: scan.ticket_checksum,
+            staff_username: scan.staff_username,
+            scanned_at: scan.scanned_at,
+            people_entered: scan.count,
+            scan_result: scan.scan_result
+          });
 
-          if (!fetchErr && currentTicket) {
-            const newAccesos = Math.max(0, currentTicket.accesos_restantes - scan.count);
-            const status = newAccesos === 0 ? 'used' : 'paid';
+          if (logErr) {
+            console.error('Error inserting scan log', logErr);
+            continue; // Keep in queue to retry later
+          }
 
-            const { error: updateErr } = await supabase
+          let ticketUpdateSuccess = false;
+
+          if (scan.scan_result === 'success') {
+            const { data: currentTicket, error: fetchErr } = await supabase
               .from('purchased_tickets')
-              .update({ accesos_restantes: newAccesos, status })
-              .eq('order_id', scan.order_id);
+              .select('accesos_restantes, total_accesos')
+              .eq('order_id', scan.order_id)
+              .single();
 
-            if (!updateErr) {
-              // Successfully synced
-              remainingQueue.splice(i, 1);
+            if (!fetchErr && currentTicket) {
+              const newAccesos = Math.max(0, currentTicket.accesos_restantes - scan.count);
+              const status = newAccesos === 0 ? 'used' : 'paid';
+
+              const { error: updateErr } = await supabase
+                .from('purchased_tickets')
+                .update({ accesos_restantes: newAccesos, status })
+                .eq('order_id', scan.order_id);
+
+              if (!updateErr) ticketUpdateSuccess = true;
+            } else {
+              // Probably ticket doesn't exist anymore
+              if (fetchErr?.code === 'PGRST116') {
+                ticketUpdateSuccess = true;
+              }
             }
           } else {
-            // Probably ticket doesn't exist anymore or network error, let's just remove it if it doesn't exist
-            if (fetchErr?.code === 'PGRST116') { // No rows found
-              remainingQueue.splice(i, 1);
-            }
+            ticketUpdateSuccess = true; // No ticket update needed for failed scans
+          }
+
+          if (ticketUpdateSuccess) {
+            remainingQueue.splice(i, 1);
           }
         }
 
@@ -216,19 +236,29 @@ export const useDatabaseStore = create<DatabaseState>()(
         return !activeId || activeId === deviceId;
       },
 
-      processScan: async (qrCode, count) => {
+      processScan: async (qrCode, count, staffUsername) => {
         const { tickets, isOnline, offlineQueue } = get();
         const ticket = tickets[qrCode];
+        const scannedAt = new Date().toISOString();
 
         if (!ticket) {
+          const log = { order_id: qrCode, count: 0, staff_username: staffUsername, scanned_at: scannedAt, scan_result: 'invalid_code', ticket_checksum: qrCode };
+          set({ offlineQueue: [...offlineQueue, log] });
+          if (get().isOnline) get().flushOfflineQueue();
           return { success: false, message: 'Código falso o no encontrado' };
         }
 
         if (ticket.status === 'used' || ticket.accesos_restantes <= 0) {
+          const log = { order_id: qrCode, count: 0, staff_username: staffUsername, scanned_at: scannedAt, scan_result: 'already_used', ticket_checksum: ticket.checksum || qrCode };
+          set({ offlineQueue: [...offlineQueue, log] });
+          if (get().isOnline) get().flushOfflineQueue();
           return { success: false, message: 'Todos los accesos consumidos' };
         }
 
         if (count > ticket.accesos_restantes) {
+          const log = { order_id: qrCode, count: 0, staff_username: staffUsername, scanned_at: scannedAt, scan_result: 'insufficient_accesses', ticket_checksum: ticket.checksum || qrCode };
+          set({ offlineQueue: [...offlineQueue, log] });
+          if (get().isOnline) get().flushOfflineQueue();
           return { success: false, message: `Solo quedan ${ticket.accesos_restantes} accesos` };
         }
 
@@ -237,12 +267,11 @@ export const useDatabaseStore = create<DatabaseState>()(
         const status = newAccesos === 0 ? 'used' : 'paid';
         const updatedTicket: Ticket = { ...ticket, accesos_restantes: newAccesos, status };
         set({ tickets: { ...tickets, [qrCode]: updatedTicket } });
-
-        if (!get().isOnline) {
-          set({ offlineQueue: [...offlineQueue, { order_id: qrCode, count }] });
-        } else {
-          // Push immediately to backend
-          set({ offlineQueue: [...offlineQueue, { order_id: qrCode, count }] });
+        
+        const successLog = { order_id: qrCode, count, staff_username: staffUsername, scanned_at: scannedAt, scan_result: 'success', ticket_checksum: ticket.checksum || qrCode };
+        set({ offlineQueue: [...offlineQueue, successLog] });
+        
+        if (get().isOnline) {
           get().flushOfflineQueue();
         }
 

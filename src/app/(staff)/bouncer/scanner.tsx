@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { api } from '../../../services/api';
 import { Users, CheckCircle, XCircle, WifiOff } from 'lucide-react-native';
 import { useDatabaseStore } from '../../../store/useDatabaseStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +20,7 @@ export default function ScannerScreen() {
   const [showPartialModal, setShowPartialModal] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState('');
   
+  const { user } = useAuthStore();
   const { tickets, processScan, isOnline, offlineQueue } = useDatabaseStore();
 
   useEffect(() => {
@@ -76,7 +78,8 @@ export default function ScannerScreen() {
     setShowPartialModal(false);
     setLoading(true);
     try {
-      const res = await processScan(currentOrderId, count);
+      const staffUsername = user?.name || 'Desconocido';
+      const res = await processScan(currentOrderId, count, staffUsername);
       if (res.success) {
         const remaining = (orderInfo?.accesos_restantes || count) - count;
         showFeedback('success', `${count} acceso(s) confirmado(s).\nQuedan ${remaining}.`);

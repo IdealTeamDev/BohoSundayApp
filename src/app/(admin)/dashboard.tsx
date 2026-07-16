@@ -508,7 +508,7 @@ export default function AdminDashboard() {
                       value={newEndDate ? new Date(newEndDate) : new Date()}
                       mode="date"
                       display="default"
-                      onChange={(event, selectedDate) => {
+                      onChange={(event: any, selectedDate?: Date) => {
                         setShowDatePicker(false);
                         if (selectedDate) {
                           const finalDate = new Date(selectedDate);

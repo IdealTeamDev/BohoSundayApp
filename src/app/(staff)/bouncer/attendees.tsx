@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { useDatabaseStore } from '../../../store/useDatabaseStore';
+import { useAuthStore } from '../../../store/useAuthStore';
 import { Ticket } from '../../../types';
 import { Search, CheckCircle, MessageCircle, Share2, X } from 'lucide-react-native';
 import * as Sharing from 'expo-sharing';
@@ -9,6 +10,7 @@ import { Alert, Linking, Platform, Image } from 'react-native';
 
 export default function AttendeesScreen() {
   const { tickets, processScan } = useDatabaseStore();
+  const { user } = useAuthStore();
   const [search, setSearch] = useState('');
 
   const ticketsArray = (Object.values(tickets) as Ticket[]).filter(t => 
@@ -88,7 +90,8 @@ export default function AttendeesScreen() {
 
   const confirmCheckIn = async () => {
     if (selectedTicket && checkInQty > 0) {
-      await processScan(selectedTicket.order_id, checkInQty);
+      const staffUsername = user?.name || 'Desconocido';
+      await processScan(selectedTicket.order_id, checkInQty, staffUsername);
       setShowModal(false);
     }
   };
