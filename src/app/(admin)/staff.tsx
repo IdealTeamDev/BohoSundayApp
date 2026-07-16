@@ -11,6 +11,7 @@ export default function StaffManagerScreen() {
   
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterRole, setFilterRole] = useState<'all' | 'bouncer' | 'viewer'>('all');
   
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
@@ -181,8 +182,28 @@ export default function StaffManagerScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.sectionHeader}>
+      <View style={[styles.sectionHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }]}>
         <Text style={styles.sectionTitle}>Equipo Actual ({staff.length})</Text>
+        <View style={{ flexDirection: 'row', backgroundColor: '#ffffff', borderRadius: 8, padding: 4, borderWidth: 1, borderColor: '#f0ebe1' }}>
+          <TouchableOpacity 
+            style={[styles.filterTab, filterRole === 'all' && styles.filterTabActive]}
+            onPress={() => setFilterRole('all')}
+          >
+            <Text style={[styles.filterTabText, filterRole === 'all' && styles.filterTabTextActive]}>Todos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterTab, filterRole === 'bouncer' && styles.filterTabActive]}
+            onPress={() => setFilterRole('bouncer')}
+          >
+            <Text style={[styles.filterTabText, filterRole === 'bouncer' && styles.filterTabTextActive]}>Porteros</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterTab, filterRole === 'viewer' && styles.filterTabActive]}
+            onPress={() => setFilterRole('viewer')}
+          >
+            <Text style={[styles.filterTabText, filterRole === 'viewer' && styles.filterTabTextActive]}>Viewers</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {loading ? (
@@ -192,7 +213,7 @@ export default function StaffManagerScreen() {
           {staff.length === 0 ? (
             <Text style={styles.emptyText}>No hay personal registrado.</Text>
           ) : (
-            staff.map((member: StaffMember, idx) => (
+            staff.filter(member => filterRole === 'all' || member.role === filterRole).map((member: StaffMember, idx) => (
               <View key={member.id} style={[styles.listItem, idx === staff.length - 1 && { borderBottomWidth: 0 }, !member.is_active && { opacity: 0.5 }]}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
@@ -209,21 +230,22 @@ export default function StaffManagerScreen() {
                   </View>
                 </View>
                 
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
                   <Switch
                     value={member.is_active}
                     onValueChange={() => {}}
                     trackColor={{ false: '#f0ebe1', true: '#1a1614' }}
                     thumbColor="#ffffff"
+                    style={{ transform: [{ scale: 0.8 }] }}
                   />
-                  <TouchableOpacity style={styles.actionBtnIcon} onPress={() => {
+                  <TouchableOpacity style={[styles.actionBtnIcon, { marginLeft: 8 }]} onPress={() => {
                     setSelectedStaffForPin(member);
                     setUpdatePinValue('');
                     setPinModalVisible(true);
                   }}>
                     <Edit2 color="#1a1614" size={18} />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.deleteBtnIcon} onPress={() => removeStaff(member)}>
+                  <TouchableOpacity style={[styles.deleteBtnIcon, { marginLeft: 8 }]} onPress={() => removeStaff(member)}>
                     <Trash2 color="#ff4d4d" size={18} />
                   </TouchableOpacity>
                 </View>
@@ -264,12 +286,17 @@ export default function StaffManagerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff', paddingHorizontal: 20 },
-  header: { marginBottom: 24, marginTop: 8 },
+  container: { flex: 1, backgroundColor: '#f4efe9', paddingHorizontal: 20 },
+  header: { marginBottom: 24, marginTop: 16 },
   headerTitle: { color: '#231e1a', fontSize: 28, fontFamily: 'NunitoSans_700Bold', letterSpacing: -0.5 },
   headerSubtitle: { color: '#bdb39b', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
   sectionHeader: { marginTop: 16, marginBottom: 16 },
-  sectionTitle: { color: '#231e1a', fontSize: 18, fontFamily: 'NunitoSans_700Bold', marginBottom: 16 },
+  sectionTitle: { color: '#231e1a', fontSize: 18, fontFamily: 'NunitoSans_700Bold', marginBottom: 0 },
+  
+  filterTab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
+  filterTabActive: { backgroundColor: '#686a54' },
+  filterTabText: { color: '#bdb39b', fontSize: 13, fontFamily: 'NunitoSans_700Bold' },
+  filterTabTextActive: { color: '#f4efe9' },
   
   formCard: { 
     backgroundColor: '#ffffff', 
