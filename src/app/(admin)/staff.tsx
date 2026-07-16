@@ -217,10 +217,10 @@ export default function StaffManagerScreen() {
               <View key={member.id} style={[styles.listItem, idx === staff.length - 1 && { borderBottomWidth: 0 }, !member.is_active && { opacity: 0.5 }]}>
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                    <Text style={styles.listItemName}>{member.name}</Text>
-                    <View style={[styles.badge, { backgroundColor: member.role === 'bouncer' ? '#1a1614' : '#8b8378' }]}>
+                    <Text style={[styles.listItemName, { flexShrink: 1 }]} numberOfLines={1}>{member.name}</Text>
+                    <View style={[styles.badge, { backgroundColor: member.role === 'admin' ? '#c89d71' : member.role === 'bouncer' ? '#1a1614' : '#8b8378' }]}>
                       <Text style={styles.badgeText}>
-                        {member.role === 'bouncer' ? 'PORTERO' : 'VIEWER'}
+                        {member.role === 'admin' ? 'ADMIN' : member.role === 'bouncer' ? 'PORTERO' : 'VIEWER'}
                       </Text>
                     </View>
                   </View>
