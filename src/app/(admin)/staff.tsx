@@ -216,16 +216,15 @@ export default function StaffManagerScreen() {
             staff.filter(member => filterRole === 'all' || member.role === filterRole).map((member: StaffMember, idx) => (
               <View key={member.id} style={[styles.listItem, idx === staff.length - 1 && { borderBottomWidth: 0 }, !member.is_active && { opacity: 0.5 }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.listItemName, { marginBottom: 6 }]}>{member.name}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={[styles.badge, { marginLeft: 0, marginRight: 8, backgroundColor: member.role === 'admin' ? '#c89d71' : member.role === 'bouncer' ? '#1a1614' : '#8b8378' }]}>
+                  <Text style={[styles.listItemName, { fontSize: 18, marginBottom: 4 }]}>{member.username}</Text>
+                  <View style={{ marginBottom: 6, flexDirection: 'row' }}>
+                    <View style={[styles.badge, { marginLeft: 0, backgroundColor: member.role === 'admin' ? '#c89d71' : member.role === 'bouncer' ? '#1a1614' : '#8b8378' }]}>
                       <Text style={styles.badgeText}>
                         {member.role === 'admin' ? 'ADMIN' : member.role === 'bouncer' ? 'PORTERO' : 'VIEWER'}
                       </Text>
                     </View>
-                    <KeyRound color="#8b8378" size={14} />
-                    <Text style={styles.listItemMeta}> {member.username} (PIN: {member.pin_hash})</Text>
                   </View>
+                  <Text style={[styles.listItemMeta, { fontSize: 14 }]}>{member.name}</Text>
                 </View>
                 
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
