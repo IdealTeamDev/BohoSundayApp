@@ -264,7 +264,7 @@ export default function StaffManagerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f5f1', paddingHorizontal: 20 },
+  container: { flex: 1, backgroundColor: '#ffffff', paddingHorizontal: 20 },
   header: { marginBottom: 24, marginTop: 8 },
   headerTitle: { color: '#231e1a', fontSize: 28, fontFamily: 'NunitoSans_700Bold', letterSpacing: -0.5 },
   headerSubtitle: { color: '#bdb39b', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.03)' 
   },
   input: { 
-    backgroundColor: '#f8f5f1', 
+    backgroundColor: '#ffffff', 
     borderWidth: 1, 
     borderColor: '#f0ebe1', 
     borderRadius: 12, 
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', marginBottom: 16 },
   label: { color: '#bdb39b', fontSize: 13, marginBottom: 8, fontFamily: 'NunitoSans_700Bold' },
   
-  roleBtn: { flex: 1, backgroundColor: '#f8f5f1', borderWidth: 1, borderColor: '#f0ebe1', borderRadius: 12, padding: 14, alignItems: 'center' },
+  roleBtn: { flex: 1, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#f0ebe1', borderRadius: 12, padding: 14, alignItems: 'center' },
   roleBtnActive: { backgroundColor: '#686a54', borderColor: '#1a1614' },
   roleText: { color: '#bdb39b', fontFamily: 'NunitoSans_700Bold' },
   roleTextActive: { color: '#f4efe9' },
@@ -332,11 +332,11 @@ const styles = StyleSheet.create({
   badge: { marginLeft: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   badgeText: { fontSize: 10, fontFamily: 'NunitoSans_700Bold', color: '#f4efe9', letterSpacing: 0.5 },
   
-  actionBtnIcon: { padding: 10, borderRadius: 10, backgroundColor: '#f8f5f1' },
+  actionBtnIcon: { padding: 10, borderRadius: 10, backgroundColor: '#ffffff' },
   deleteBtnIcon: { padding: 10, borderRadius: 10, backgroundColor: '#fff0f0' },
   emptyText: { color: '#bdb39b', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', textAlign: 'center', padding: 20 },
   
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#f8f5f1', width: '90%', padding: 24, borderRadius: 24 },
+  modalContent: { backgroundColor: '#ffffff', width: '90%', padding: 24, borderRadius: 24 },
   modalTitle: { fontSize: 22, color: '#231e1a', fontFamily: 'NunitoSans_700Bold', letterSpacing: -0.5 },
 });

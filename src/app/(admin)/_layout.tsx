@@ -20,7 +20,7 @@ export default function AdminLayout() {
     <>
       <Tabs
         screenOptions={{
-          headerStyle: { backgroundColor: '#f8f5f1', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.03)', shadowOpacity: 0, elevation: 0 },
+          headerStyle: { backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.03)', shadowOpacity: 0, elevation: 0 },
           headerTintColor: '#1a1614',
           tabBarStyle: { 
             backgroundColor: '#f4efe9', 

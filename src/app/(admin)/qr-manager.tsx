@@ -444,7 +444,7 @@ export default function QRManagerScreen() {
                   <Text style={styles.shareBtnText}>Enviar por WhatsApp</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#f4efe9', borderWidth: 1, borderColor: '#f0ebe1', marginTop: 12 }]} onPress={shareQrCode}>
+                <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#f0ebe1', marginTop: 12 }]} onPress={shareQrCode}>
                   <Share2 color="#1a1614" size={20} style={{ marginRight: 8 }} />
                   <Text style={[styles.shareBtnText, { color: '#231e1a' }]}>Descargar QR</Text>
                 </TouchableOpacity>
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.03)',
   },
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     padding: 8,
     borderRadius: 12,
   },
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     height: '85%',
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   pickerItem: {
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 12,
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
     fontFamily: 'NunitoSans_700Bold',
   },
   qrModalContent: {
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     margin: 24,
     marginTop: '30%',
     borderRadius: 32,
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
     top: 20,
     right: 20,
     zIndex: 10,
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     padding: 8,
     borderRadius: 20,
   },

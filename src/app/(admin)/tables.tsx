@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.03)',
   },
   input: {
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 10,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     width: '90%',
     borderRadius: 24,
     padding: 24,
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     fontFamily: 'NunitoSans_700Bold',
   },
   ticketBox: {
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     padding: 20,
     borderRadius: 16,
     marginBottom: 24,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   capacityProgress: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     padding: 12,
     borderRadius: 12,
     marginTop: 16,

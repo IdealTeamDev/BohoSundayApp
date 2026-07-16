@@ -315,7 +315,7 @@ export default function AdminDashboard() {
                       paddingHorizontal: 16, 
                       paddingVertical: 8, 
                       borderRadius: 20, 
-                      backgroundColor: newProductZone === zone ? '#1a1614' : '#f8f5f1',
+                      backgroundColor: newProductZone === zone ? '#1a1614' : '#ffffff',
                       borderWidth: 1,
                       borderColor: newProductZone === zone ? '#1a1614' : '#f0ebe1',
                     }}
@@ -482,7 +482,7 @@ export default function AdminDashboard() {
                 // @ts-ignore - web only element
                 <input 
                   type="date"
-                  style={{ padding: 12, borderRadius: 8, border: '1px solid #d4cfb4', backgroundColor: '#f4efe9', marginBottom: 16, width: '100%', boxSizing: 'border-box', fontFamily: 'NunitoSans_400Regular', fontSize: 16, color: '#231e1a' }}
+                  style={{ padding: 12, borderRadius: 8, border: '1px solid #d4cfb4', backgroundColor: '#ffffff', marginBottom: 16, width: '100%', boxSizing: 'border-box', fontFamily: 'NunitoSans_400Regular', fontSize: 16, color: '#231e1a' }}
                   value={newEndDate ? new Date(newEndDate).toISOString().split('T')[0] : ''}
                   onChange={(e) => {
                     if (e.target.value) {
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   refreshBtn: {
     padding: 10,
     borderRadius: 12,
-    backgroundColor: '#f4efe9',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.03)',
     shadowColor: '#000',
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 12,
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#f0ebe1',
   },
@@ -813,7 +813,7 @@ const styles = StyleSheet.create({
   editBtnIcon: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
   },
   deleteBtnIcon: {
     padding: 8,
@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#ffffff',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     height: '85%',
