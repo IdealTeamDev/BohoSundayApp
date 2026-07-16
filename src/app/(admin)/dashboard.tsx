@@ -405,10 +405,10 @@ export default function AdminDashboard() {
                     <View style={{ marginTop: 12, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: '#f0ebe1' }}>
                       {g.items.map(p => (
                         <View key={p.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#4a4542' }}>{p.name} <Text style={{ color: '#a0978b', fontSize: 12 }}>({p.id})</Text></Text>
+                          <View style={{ flex: 1, paddingRight: 8 }}>
+                            <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#4a4542', flexWrap: 'wrap' }}>{p.name} <Text style={{ color: '#a0978b', fontSize: 12 }}>({p.id})</Text></Text>
+                            <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#231e1a', marginTop: 4 }}>{formatCOP(p.basePrice)}</Text>
                           </View>
-                          <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#231e1a', marginRight: 16 }}>{formatCOP(p.basePrice)}</Text>
                           <TouchableOpacity onPress={() => removeProduct(p.id, p.type as 'ticket'|'bed'|'table')} style={{ padding: 4 }}>
                             <Trash2 color="#ff4d4d" size={18} />
                           </TouchableOpacity>
