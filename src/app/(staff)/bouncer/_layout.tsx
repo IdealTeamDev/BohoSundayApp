@@ -38,10 +38,18 @@ export default function BouncerLayout() {
         }}
       >
         <Tabs.Screen
-          name="dashboard"
+          name="scanner"
           options={{
-            title: 'Métricas',
-            tabBarIcon: ({ color }) => <BarChart3 color={color} size={24} />,
+            title: 'Lector de QR',
+            headerShown: false,
+            tabBarIcon: ({ color }) => <Camera color={color} size={24} />,
+          }}
+        />
+        <Tabs.Screen
+          name="attendees"
+          options={{
+            title: 'Asistentes',
+            tabBarIcon: ({ color }) => <List color={color} size={24} />,
             headerLeft: () => (
               <TouchableOpacity onPress={() => setAirplaneMode(!isAirplaneMode)} style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}>
                 <Plane color={isAirplaneMode ? '#eab308' : '#52525b'} size={20} />
@@ -59,38 +67,8 @@ export default function BouncerLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="scanner"
-          options={{
-            title: 'Escáner',
-            headerShown: false,
-            tabBarIcon: ({ color }) => <Camera color={color} size={24} />,
-          }}
-        />
-        <Tabs.Screen
-          name="attendees"
-          options={{
-            title: 'Asistentes',
-            tabBarIcon: ({ color }) => <List color={color} size={24} />,
-            headerRight: () => (
-              <TouchableOpacity onPress={() => setLogoutVisible(true)} style={{ marginRight: 16 }}>
-                <LogOut color="#ef4444" size={20} />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="map"
-          options={{
-            title: 'Mapa',
-            tabBarIcon: ({ color }) => <Map color={color} size={24} />,
-            headerRight: () => (
-              <TouchableOpacity onPress={() => setLogoutVisible(true)} style={{ marginRight: 16 }}>
-                <LogOut color="#ef4444" size={20} />
-              </TouchableOpacity>
-            ),
-          }}
-        />
+        <Tabs.Screen name="dashboard" options={{ href: null }} />
+        <Tabs.Screen name="map" options={{ href: null }} />
       </Tabs>
       <LogoutConfirmModal 
         visible={logoutVisible} 

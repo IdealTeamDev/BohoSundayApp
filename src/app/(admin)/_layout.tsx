@@ -14,6 +14,10 @@ export default function AdminLayout() {
   if (!user) {
     return <Redirect href="/(auth)/login" />;
   }
+  
+  if (user.role === 'bouncer') {
+    return <Redirect href="/(staff)/bouncer/scanner" />;
+  }
 
   const isViewer = user?.role === 'viewer';
   return (
