@@ -211,7 +211,7 @@ export default function QRManagerScreen() {
           {ticket.zone && ticket.ticket_number && (
             <Text style={styles.ticketMeta}>Zona: {ticket.zone} #{ticket.ticket_number}</Text>
           )}
-          <Text style={[styles.ticketMeta, { color: '#1a1614', fontFamily: 'NunitoSans_700Bold', marginTop: 4 }]}>
+          <Text style={[styles.ticketMeta, { color: '#231e1a', fontFamily: 'NunitoSans_700Bold', marginTop: 4 }]}>
             Aforo: {ticket.total_accesos} (Disponibles: {ticket.accesos_restantes})
           </Text>
         </View>
@@ -373,9 +373,9 @@ export default function QRManagerScreen() {
                       if (allowTierChange) setCustomTierId('');
                     }}
                   >
-                    {allowTierChange && <Text style={{color: '#fff', fontSize: 12, fontWeight: 'bold'}}>✓</Text>}
+                    {allowTierChange && <Text style={{color: '#f4efe9', fontSize: 12, fontWeight: 'bold'}}>✓</Text>}
                   </TouchableOpacity>
-                  <Text style={{color: '#8b8378', fontSize: 13, fontFamily: 'NunitoSans_600SemiBold'}}>
+                  <Text style={{color: '#bdb39b', fontSize: 13, fontFamily: 'NunitoSans_600SemiBold'}}>
                     Quiero cambiar la etapa manualmente
                   </Text>
                 </View>
@@ -395,7 +395,7 @@ export default function QRManagerScreen() {
                     ))}
                   </View>
                 ) : (
-                  <TextInput style={[styles.input, { backgroundColor: '#f0ebe1', color: '#8b8378' }]} value={activeTier?.name || 'Cargando...'} editable={false} />
+                  <TextInput style={[styles.input, { backgroundColor: '#f0ebe1', color: '#bdb39b' }]} value={activeTier?.name || 'Cargando...'} editable={false} />
                 )}
 
                 <Text style={styles.label}>Cantidad en Aforo *</Text>
@@ -444,9 +444,9 @@ export default function QRManagerScreen() {
                   <Text style={styles.shareBtnText}>Enviar por WhatsApp</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#f0ebe1', marginTop: 12 }]} onPress={shareQrCode}>
+                <TouchableOpacity style={[styles.shareBtn, { backgroundColor: '#f4efe9', borderWidth: 1, borderColor: '#f0ebe1', marginTop: 12 }]} onPress={shareQrCode}>
                   <Share2 color="#1a1614" size={20} style={{ marginRight: 8 }} />
-                  <Text style={[styles.shareBtnText, { color: '#1a1614' }]}>Descargar QR</Text>
+                  <Text style={[styles.shareBtnText, { color: '#231e1a' }]}>Descargar QR</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -460,15 +460,15 @@ export default function QRManagerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#f4efe9',
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 100,
   },
   header: { marginBottom: 24, marginTop: 8 },
-  headerTitle: { color: '#1a1614', fontSize: 28, fontFamily: 'NunitoSans_800ExtraBold', letterSpacing: -0.5 },
-  headerSubtitle: { color: '#8b8378', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
+  headerTitle: { color: '#231e1a', fontSize: 28, fontFamily: 'NunitoSans_700Bold', letterSpacing: -0.5 },
+  headerSubtitle: { color: '#bdb39b', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
   
   filterSection: {
     marginBottom: 24,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: '#1a1614',
+    color: '#231e1a',
     fontFamily: 'NunitoSans_600SemiBold',
     fontSize: 15,
   },
@@ -506,31 +506,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.03)',
   },
   filterBtnActive: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     borderColor: '#1a1614',
   },
   filterBtnText: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontFamily: 'NunitoSans_700Bold',
     fontSize: 13,
   },
   filterBtnTextActive: {
-    color: '#ffffff',
+    color: '#f4efe9',
   },
   
   emptyText: {
-    color: '#8b8378',
+    color: '#bdb39b',
     textAlign: 'center',
     marginTop: 40,
     fontFamily: 'NunitoSans_600SemiBold',
   },
   ticketCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
@@ -547,9 +547,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ticketName: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 18,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -0.3,
   },
   statusBadge: {
@@ -560,11 +560,11 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 10,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: 0.5,
   },
   ticketMeta: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 13,
     marginBottom: 2,
     fontFamily: 'NunitoSans_600SemiBold',
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 24,
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -618,8 +618,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 22,
-    color: '#1a1614',
-    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#231e1a',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -0.5,
   },
   modalForm: {
@@ -635,28 +635,28 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    color: '#1a1614',
-    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#231e1a',
+    fontFamily: 'NunitoSans_700Bold',
     marginBottom: 16,
     letterSpacing: -0.3,
   },
   label: {
     fontSize: 13,
-    color: '#8b8378',
+    color: '#bdb39b',
     marginBottom: 8,
     fontFamily: 'NunitoSans_700Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
     fontFamily: 'NunitoSans_600SemiBold',
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 15,
   },
   pickerContainer: {
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   pickerItem: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 12,
@@ -674,18 +674,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   pickerItemActive: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     borderColor: '#1a1614',
   },
   pickerItemText: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontFamily: 'NunitoSans_700Bold',
   },
   pickerItemTextActive: {
-    color: '#ffffff',
+    color: '#f4efe9',
   },
   submitBtn: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     padding: 18,
     borderRadius: 16,
     alignItems: 'center',
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   submitBtnText: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontSize: 16,
     fontFamily: 'NunitoSans_700Bold',
   },
@@ -715,21 +715,21 @@ const styles = StyleSheet.create({
     top: 20,
     right: 20,
     zIndex: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     padding: 8,
     borderRadius: 20,
   },
   qrModalTitle: {
     fontSize: 24,
-    color: '#1a1614',
-    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#231e1a',
+    fontFamily: 'NunitoSans_700Bold',
     marginTop: 16,
     marginBottom: 4,
     letterSpacing: -0.5,
   },
   qrModalSub: {
     fontSize: 14,
-    color: '#8b8378',
+    color: '#bdb39b',
     fontFamily: 'NunitoSans_600SemiBold',
     marginBottom: 32,
   },
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   shareBtn: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   shareBtnText: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontSize: 15,
     fontFamily: 'NunitoSans_700Bold',
   }

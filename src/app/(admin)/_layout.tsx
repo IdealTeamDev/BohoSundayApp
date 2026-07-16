@@ -23,7 +23,7 @@ export default function AdminLayout() {
           headerStyle: { backgroundColor: '#f8f5f1', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.03)', shadowOpacity: 0, elevation: 0 },
           headerTintColor: '#1a1614',
           tabBarStyle: { 
-            backgroundColor: '#ffffff', 
+            backgroundColor: '#f4efe9', 
             borderTopColor: 'rgba(0,0,0,0.03)',
             paddingBottom: Math.max(insets.bottom, 15),
             paddingTop: 10,

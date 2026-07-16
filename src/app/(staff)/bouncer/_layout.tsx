@@ -47,7 +47,7 @@ export default function BouncerLayout() {
                 <Plane color={isAirplaneMode ? '#eab308' : '#52525b'} size={20} />
                 {offlineQueue.length > 0 && (
                   <View style={{ backgroundColor: '#ef4444', borderRadius: 10, paddingHorizontal: 6, marginLeft: 4 }}>
-                    <Text style={{ color: '#fff', fontSize: 10, fontFamily: 'NunitoSans_600SemiBold' }}>{offlineQueue.length}</Text>
+                    <Text style={{ color: '#f4efe9', fontSize: 10, fontFamily: 'NunitoSans_600SemiBold' }}>{offlineQueue.length}</Text>
                   </View>
                 )}
               </TouchableOpacity>

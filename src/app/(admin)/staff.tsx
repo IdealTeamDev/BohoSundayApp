@@ -266,13 +266,13 @@ export default function StaffManagerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f5f1', paddingHorizontal: 20 },
   header: { marginBottom: 24, marginTop: 8 },
-  headerTitle: { color: '#1a1614', fontSize: 28, fontFamily: 'NunitoSans_800ExtraBold', letterSpacing: -0.5 },
-  headerSubtitle: { color: '#8b8378', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
+  headerTitle: { color: '#231e1a', fontSize: 28, fontFamily: 'NunitoSans_700Bold', letterSpacing: -0.5 },
+  headerSubtitle: { color: '#bdb39b', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
   sectionHeader: { marginTop: 16, marginBottom: 16 },
-  sectionTitle: { color: '#1a1614', fontSize: 18, fontFamily: 'NunitoSans_700Bold', marginBottom: 16 },
+  sectionTitle: { color: '#231e1a', fontSize: 18, fontFamily: 'NunitoSans_700Bold', marginBottom: 16 },
   
   formCard: { 
-    backgroundColor: '#ffffff', 
+    backgroundColor: '#f4efe9', 
     borderRadius: 24, 
     padding: 20, 
     marginBottom: 24, 
@@ -289,25 +289,25 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#f0ebe1', 
     borderRadius: 12, 
-    color: '#1a1614', 
+    color: '#231e1a', 
     paddingHorizontal: 16, 
     height: 48, 
     marginBottom: 16, 
     fontFamily: 'NunitoSans_600SemiBold' 
   },
   row: { flexDirection: 'row', marginBottom: 16 },
-  label: { color: '#8b8378', fontSize: 13, marginBottom: 8, fontFamily: 'NunitoSans_700Bold' },
+  label: { color: '#bdb39b', fontSize: 13, marginBottom: 8, fontFamily: 'NunitoSans_700Bold' },
   
   roleBtn: { flex: 1, backgroundColor: '#f8f5f1', borderWidth: 1, borderColor: '#f0ebe1', borderRadius: 12, padding: 14, alignItems: 'center' },
-  roleBtnActive: { backgroundColor: '#1a1614', borderColor: '#1a1614' },
-  roleText: { color: '#8b8378', fontFamily: 'NunitoSans_700Bold' },
-  roleTextActive: { color: '#ffffff' },
+  roleBtnActive: { backgroundColor: '#686a54', borderColor: '#1a1614' },
+  roleText: { color: '#bdb39b', fontFamily: 'NunitoSans_700Bold' },
+  roleTextActive: { color: '#f4efe9' },
   
-  addBtn: { backgroundColor: '#1a1614', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, marginTop: 8 },
-  addBtnText: { color: '#ffffff', fontFamily: 'NunitoSans_700Bold', marginLeft: 8 },
+  addBtn: { backgroundColor: '#686a54', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, marginTop: 8 },
+  addBtnText: { color: '#f4efe9', fontFamily: 'NunitoSans_700Bold', marginLeft: 8 },
   
   listContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 24,
     padding: 8,
     shadowColor: '#000',
@@ -326,17 +326,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  listItemName: { color: '#1a1614', fontSize: 16, fontFamily: 'NunitoSans_700Bold' },
-  listItemMeta: { color: '#8b8378', fontSize: 13, fontFamily: 'NunitoSans_600SemiBold' },
+  listItemName: { color: '#231e1a', fontSize: 16, fontFamily: 'NunitoSans_700Bold' },
+  listItemMeta: { color: '#bdb39b', fontSize: 13, fontFamily: 'NunitoSans_600SemiBold' },
   
   badge: { marginLeft: 8, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 10, fontFamily: 'NunitoSans_800ExtraBold', color: '#fff', letterSpacing: 0.5 },
+  badgeText: { fontSize: 10, fontFamily: 'NunitoSans_700Bold', color: '#f4efe9', letterSpacing: 0.5 },
   
   actionBtnIcon: { padding: 10, borderRadius: 10, backgroundColor: '#f8f5f1' },
   deleteBtnIcon: { padding: 10, borderRadius: 10, backgroundColor: '#fff0f0' },
-  emptyText: { color: '#8b8378', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', textAlign: 'center', padding: 20 },
+  emptyText: { color: '#bdb39b', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', textAlign: 'center', padding: 20 },
   
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#f8f5f1', width: '90%', padding: 24, borderRadius: 24 },
-  modalTitle: { fontSize: 22, color: '#1a1614', fontFamily: 'NunitoSans_800ExtraBold', letterSpacing: -0.5 },
+  modalTitle: { fontSize: 22, color: '#231e1a', fontFamily: 'NunitoSans_700Bold', letterSpacing: -0.5 },
 });

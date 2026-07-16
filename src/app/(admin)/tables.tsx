@@ -201,7 +201,7 @@ export default function TablesManagerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#f4efe9',
     padding: 20,
   },
   headerRow: {
@@ -212,15 +212,15 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   title: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 20,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -0.5,
   },
   legend: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 12,
     marginLeft: 6,
-    color: '#8b8378',
+    color: '#bdb39b',
     fontFamily: 'NunitoSans_700Bold',
   },
   zoneSection: {
@@ -243,8 +243,8 @@ const styles = StyleSheet.create({
   },
   zoneTitle: {
     fontSize: 16,
-    fontFamily: 'NunitoSans_800ExtraBold',
-    color: '#8b8378',
+    fontFamily: 'NunitoSans_700Bold',
+    color: '#bdb39b',
     marginBottom: 12,
     letterSpacing: 0.5,
   },
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 24,
     marginTop: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     padding: 12,
     borderRadius: 16,
     shadowColor: '#000',
@@ -269,14 +269,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 10,
-    color: '#1a1614',
+    color: '#231e1a',
     paddingHorizontal: 12,
     height: 44,
     fontFamily: 'NunitoSans_600SemiBold',
     fontSize: 14,
   },
   addBtn: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     width: 44,
     height: 44,
     borderRadius: 10,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   },
   gridItem: {
     width: '48%',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     padding: 16,
     borderRadius: 16,
     shadowColor: '#000',
@@ -313,15 +313,15 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   gridItemTitle: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 16,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     textAlign: 'left',
     marginBottom: 4,
     marginTop: 4,
   },
   gridItemMeta: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 13,
     fontFamily: 'NunitoSans_600SemiBold',
     textAlign: 'left',
@@ -346,23 +346,23 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 24,
-    color: '#1a1614',
-    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#231e1a',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -0.5,
   },
   infoLabel: {
     fontSize: 13,
-    color: '#8b8378',
+    color: '#bdb39b',
     fontFamily: 'NunitoSans_600SemiBold',
     marginBottom: 4,
   },
   infoValue: {
     fontSize: 16,
-    color: '#1a1614',
-    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#231e1a',
+    fontFamily: 'NunitoSans_700Bold',
   },
   ticketBox: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     padding: 20,
     borderRadius: 16,
     marginBottom: 24,
@@ -371,8 +371,8 @@ const styles = StyleSheet.create({
   },
   ticketBoxTitle: {
     fontSize: 16,
-    color: '#1a1614',
-    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#231e1a',
+    fontFamily: 'NunitoSans_700Bold',
     marginBottom: 16,
   },
   capacityProgress: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   progressText: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontFamily: 'NunitoSans_700Bold',
     fontSize: 14,
   },
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   revokeBtnText: {
-    color: '#fff',
+    color: '#f4efe9',
     fontFamily: 'NunitoSans_700Bold',
     fontSize: 14,
   },

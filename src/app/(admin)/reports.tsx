@@ -353,7 +353,7 @@ export default function ReportsScreen() {
                     <DollarSign color="#fff" size={16} />
                   </View>
                 </View>
-                <Text style={[styles.kpiValue, { color: '#fff' }]} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(totalRevenue)}</Text>
+                <Text style={[styles.kpiValue, { color: '#f4efe9' }]} numberOfLines={1} adjustsFontSizeToFit>{formatCurrency(totalRevenue)}</Text>
               </View>
             )}
 
@@ -436,7 +436,7 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#f4efe9',
     paddingHorizontal: 20,
   },
   header: {
@@ -444,13 +444,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   headerTitle: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 28,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -0.5,
   },
   headerSubtitle: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 15,
     fontFamily: 'NunitoSans_600SemiBold',
     marginTop: 4,
@@ -460,12 +460,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 18,
     fontFamily: 'NunitoSans_700Bold',
   },
   sectionSubtitle: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 13,
     fontFamily: 'NunitoSans_400Regular',
     marginTop: 2,
@@ -478,12 +478,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   kpiCardPrimary: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     padding: 24,
   },
   kpiCardSmall: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   kpiTitle: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 12,
     fontFamily: 'NunitoSans_700Bold',
     textTransform: 'uppercase',
@@ -525,36 +525,36 @@ const styles = StyleSheet.create({
   },
   kpiValue: {
     fontSize: 36,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -1,
   },
   filterBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.03)',
   },
   filterBtnActive: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     borderColor: '#1a1614',
   },
   filterBtnText: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontFamily: 'NunitoSans_700Bold',
     fontSize: 13,
   },
   filterBtnTextActive: {
-    color: '#ffffff',
+    color: '#f4efe9',
   },
   kpiValueSmall: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 24,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
   },
   kpiSubSmall: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 14,
     fontFamily: 'NunitoSans_600SemiBold',
   },
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   listContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 24,
     padding: 8,
     shadowColor: '#000',
@@ -593,20 +593,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tierName: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 16,
     fontFamily: 'NunitoSans_700Bold',
     marginBottom: 2,
   },
   tierMeta: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 13,
     fontFamily: 'NunitoSans_600SemiBold',
   },
   tierRevenue: {
     color: '#c89d71',
     fontSize: 18,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
   },
   progressSection: {
     backgroundColor: '#faf8f5',
@@ -619,12 +619,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   progressLabel: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 12,
     fontFamily: 'NunitoSans_600SemiBold',
   },
   progressValue: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 13,
     fontFamily: 'NunitoSans_700Bold',
   },
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 15,
     fontFamily: 'NunitoSans_600SemiBold',
     textAlign: 'center',
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderWidth: 1,
     borderColor: '#e8e2d5',
   },
@@ -662,16 +662,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
   },
   exportBtnTextCsv: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 15,
     fontFamily: 'NunitoSans_700Bold',
     marginLeft: 8,
   },
   exportBtnTextPdf: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontSize: 15,
     fontFamily: 'NunitoSans_700Bold',
     marginLeft: 8,

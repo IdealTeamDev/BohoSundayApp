@@ -4,6 +4,7 @@ import { Redirect } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
+import { formatCOP } from '../../utils/format';
 import { api, AdminStats } from '../../services/api';
 import { RefreshCw, Users, Ticket, DollarSign, Edit2, Trash2, Plus, Save, X } from 'lucide-react-native';
 
@@ -220,7 +221,7 @@ export default function AdminDashboard() {
                   <DollarSign color="#fff" size={16} />
                 </View>
               </View>
-              <Text style={[styles.kpiValue, { color: '#fff' }]}>{formatCurrency(stats.totalRevenue)}</Text>
+              <Text style={[styles.kpiValue, { color: '#f4efe9' }]}>{formatCurrency(stats.totalRevenue)}</Text>
             </View>
 
             <View style={styles.kpiRow}>
@@ -368,7 +369,7 @@ export default function AdminDashboard() {
           </View>
           
           <TouchableOpacity onPress={handleAddProduct} style={{ backgroundColor: '#c89d71', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 16 }} disabled={isAddingProduct}>
-            <Text style={{ color: '#fff', fontFamily: 'NunitoSans_700Bold', fontSize: 16 }}>
+            <Text style={{ color: '#f4efe9', fontFamily: 'NunitoSans_700Bold', fontSize: 16 }}>
               {isAddingProduct ? 'Añadiendo...' : 'Añadir Producto'}
             </Text>
           </TouchableOpacity>
@@ -396,7 +397,7 @@ export default function AdminDashboard() {
                       <Text style={styles.listItemMeta}>{g.type.toUpperCase()}</Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <Text style={[styles.listItemValue, { color: '#8b8378' }]}>{isExpanded ? '▲' : '▼'}</Text>
+                      <Text style={[styles.listItemValue, { color: '#bdb39b' }]}>{isExpanded ? '▲' : '▼'}</Text>
                     </View>
                   </TouchableOpacity>
                   
@@ -407,7 +408,7 @@ export default function AdminDashboard() {
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#4a4542' }}>{p.name} <Text style={{ color: '#a0978b', fontSize: 12 }}>({p.id})</Text></Text>
                           </View>
-                          <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#1a1614', marginRight: 16 }}>${p.basePrice}</Text>
+                          <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#231e1a', marginRight: 16 }}>${p.basePrice}</Text>
                           <TouchableOpacity onPress={() => removeProduct(p.id, p.type as 'ticket'|'bed'|'table')} style={{ padding: 4 }}>
                             <Trash2 color="#ff4d4d" size={18} />
                           </TouchableOpacity>
@@ -444,7 +445,7 @@ export default function AdminDashboard() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.listItemName}>{item.name}</Text>
                   <Text style={styles.listItemMeta}>{Object.keys(item.priceOverrides).length} precios modificados</Text>
-                  <Text style={[styles.listItemMeta, { marginTop: 4, color: '#1a1614', fontFamily: 'NunitoSans_700Bold' }]}>Cierra: {new Date(item.endDate).toLocaleString()}</Text>
+                  <Text style={[styles.listItemMeta, { marginTop: 4, color: '#231e1a', fontFamily: 'NunitoSans_700Bold' }]}>Cierra: {new Date(item.endDate).toLocaleString()}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <TouchableOpacity onPress={() => startEditTier(item)} style={styles.editBtnIcon}>
@@ -481,7 +482,7 @@ export default function AdminDashboard() {
                 // @ts-ignore - web only element
                 <input 
                   type="date"
-                  style={{ padding: 12, borderRadius: 8, border: '1px solid #d4cfb4', backgroundColor: '#fff', marginBottom: 16, width: '100%', boxSizing: 'border-box', fontFamily: 'NunitoSans_400Regular', fontSize: 16, color: '#231e1a' }}
+                  style={{ padding: 12, borderRadius: 8, border: '1px solid #d4cfb4', backgroundColor: '#f4efe9', marginBottom: 16, width: '100%', boxSizing: 'border-box', fontFamily: 'NunitoSans_400Regular', fontSize: 16, color: '#231e1a' }}
                   value={newEndDate ? new Date(newEndDate).toISOString().split('T')[0] : ''}
                   onChange={(e) => {
                     if (e.target.value) {
@@ -547,7 +548,7 @@ export default function AdminDashboard() {
                             onPress={() => toggleOverride(g.ids, g.basePrice)}
                             style={{ width: 24, height: 24, borderRadius: 4, borderWidth: 2, borderColor: '#686a54', backgroundColor: isOverridden ? '#686a54' : 'transparent', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}
                           >
-                            {isOverridden && <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>✓</Text>}
+                            {isOverridden && <Text style={{ color: '#f4efe9', fontSize: 16, fontWeight: 'bold' }}>✓</Text>}
                           </TouchableOpacity>
                           
                           <View style={{ flex: 1 }}>
@@ -589,7 +590,7 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f5f1',
+    backgroundColor: '#f4efe9',
   },
   content: {
     padding: 20,
@@ -603,13 +604,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   title: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 28,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -0.5,
   },
   subtitle: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 15,
     fontFamily: 'NunitoSans_600SemiBold',
     marginTop: 4,
@@ -617,7 +618,7 @@ const styles = StyleSheet.create({
   refreshBtn: {
     padding: 10,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.03)',
     shadowColor: '#000',
@@ -627,7 +628,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   infoText: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 15,
     fontFamily: 'NunitoSans_400Regular',
   },
@@ -651,7 +652,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   kpiCardPrimary: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     padding: 24,
     borderRadius: 24,
     shadowColor: '#000',
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
   },
   kpiCardSmall: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
@@ -680,7 +681,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   kpiTitle: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 12,
     fontFamily: 'NunitoSans_700Bold',
     textTransform: 'uppercase',
@@ -696,31 +697,31 @@ const styles = StyleSheet.create({
   },
   kpiValue: {
     fontSize: 36,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -1,
   },
   kpiValueSmall: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 24,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
   },
   sectionHeader: {
     marginTop: 32,
     marginBottom: 16,
   },
   sectionTitle: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 18,
     fontFamily: 'NunitoSans_700Bold',
   },
   sectionSubtitle: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 13,
     fontFamily: 'NunitoSans_400Regular',
     marginTop: 2,
   },
   formCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 24,
     padding: 16,
     shadowColor: '#000',
@@ -737,7 +738,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f0ebe1',
     borderRadius: 12,
-    color: '#1a1614',
+    color: '#231e1a',
     paddingHorizontal: 16,
     height: 48,
     fontFamily: 'NunitoSans_600SemiBold',
@@ -753,16 +754,16 @@ const styles = StyleSheet.create({
     borderColor: '#f0ebe1',
   },
   typeSelectBtnActive: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     borderColor: '#1a1614',
   },
   typeSelectBtnText: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 13,
     fontFamily: 'NunitoSans_700Bold',
   },
   typeSelectBtnTextActive: {
-    color: '#ffffff',
+    color: '#f4efe9',
   },
   addBtnSmall: {
     backgroundColor: '#c89d71',
@@ -773,7 +774,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f4efe9',
     borderRadius: 24,
     padding: 8,
     shadowColor: '#000',
@@ -793,20 +794,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listItemName: {
-    color: '#1a1614',
+    color: '#231e1a',
     fontSize: 16,
     fontFamily: 'NunitoSans_700Bold',
     marginBottom: 2,
   },
   listItemMeta: {
-    color: '#8b8378',
+    color: '#bdb39b',
     fontSize: 13,
     fontFamily: 'NunitoSans_600SemiBold',
   },
   listItemValue: {
     color: '#c89d71',
     fontSize: 18,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     marginRight: 16,
   },
   editBtnIcon: {
@@ -820,7 +821,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff0f0',
   },
   primaryActionBtn: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
@@ -828,7 +829,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryActionBtnText: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontFamily: 'NunitoSans_700Bold',
     fontSize: 14,
   },
@@ -852,8 +853,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 22,
-    color: '#1a1614',
-    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#231e1a',
+    fontFamily: 'NunitoSans_700Bold',
     letterSpacing: -0.5,
   },
   modalForm: {
@@ -861,19 +862,19 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#8b8378',
+    color: '#bdb39b',
     marginBottom: 8,
     fontFamily: 'NunitoSans_700Bold',
   },
   submitBtn: {
-    backgroundColor: '#1a1614',
+    backgroundColor: '#686a54',
     padding: 18,
     borderRadius: 16,
     alignItems: 'center',
     marginTop: 32,
   },
   submitBtnText: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontSize: 16,
     fontFamily: 'NunitoSans_700Bold',
   },

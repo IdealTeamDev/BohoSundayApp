@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   feedbackText: {
-    color: '#fff',
+    color: '#f4efe9',
     fontSize: 20,
     fontFamily: 'NunitoSans_600SemiBold',
     marginTop: 16,

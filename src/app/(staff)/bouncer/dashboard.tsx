@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: { marginBottom: 24, marginTop: 16 },
-  headerTitle: { color: '#ffffff', fontSize: 28, fontFamily: 'NunitoSans_800ExtraBold', letterSpacing: -0.5 },
+  headerTitle: { color: '#f4efe9', fontSize: 28, fontFamily: 'NunitoSans_700Bold', letterSpacing: -0.5 },
   headerSubtitle: { color: '#a1a1aa', fontSize: 15, fontFamily: 'NunitoSans_600SemiBold', marginTop: 4 },
   
   heroCard: {
@@ -81,9 +81,9 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   heroBigNumber: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontSize: 72,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     marginVertical: 4,
     letterSpacing: -2,
   },
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontSize: 18,
     fontFamily: 'NunitoSans_700Bold',
   },
@@ -122,9 +122,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   statNumber: {
-    color: '#ffffff',
+    color: '#f4efe9',
     fontSize: 32,
-    fontFamily: 'NunitoSans_800ExtraBold',
+    fontFamily: 'NunitoSans_700Bold',
     marginBottom: 4,
     letterSpacing: -1,
   },
