@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking, Platform, FlatList } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Plus, X, Share2, MessageCircle, Search, Filter } from 'lucide-react-native';
@@ -8,7 +8,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Ticket } from '../../types';
 
 export default function QRManagerScreen() {
-  const { tickets, tiers, tables, getActiveTier, getFusedProductsForActiveTier } = useDatabaseStore();
+  const { tickets, tiers, tables, getActiveTier, getFusedProductsForActiveTier, adminCreateTicket } = useDatabaseStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const { user } = useAuthStore();
@@ -17,9 +17,15 @@ export default function QRManagerScreen() {
   // Form state
   const [buyerName, setBuyerName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [capacity, setCapacity] = useState('1');
+  const [ticketCategory, setTicketCategory] = useState<'entrada'|'mesa'|'cama'|''>('');
   const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedZone, setSelectedZone] = useState<string>('');
   const [selectedTable, setSelectedTable] = useState('');
+  const [allowTierChange, setAllowTierChange] = useState(false);
+  const [customTierId, setCustomTierId] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Modal Edit state
   const [editPhone, setEditPhone] = useState('');
@@ -33,36 +39,51 @@ export default function QRManagerScreen() {
     const searchMatch = t.buyer_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         (t.buyer_phone || '').includes(searchQuery) || 
                         t.order_id.toLowerCase().includes(searchQuery.toLowerCase());
-    
     const isUsed = t.accesos_restantes === 0;
-    const isAvailable = t.accesos_restantes > 0;
-    
-    const statusMatch = filterStatus === 'all' || 
-                        (filterStatus === 'used' && isUsed) || 
-                        (filterStatus === 'available' && isAvailable);
-
+    const statusMatch = filterStatus === 'all' ? true : (filterStatus === 'used' ? isUsed : !isUsed);
     return searchMatch && statusMatch;
   });
   
   const activeTier = getActiveTier();
   const availableProducts = getFusedProductsForActiveTier();
 
-  const handleCreate = () => {
-    if (!buyerName || !capacity || !selectedType) {
-      Alert.alert('Error', 'Por favor llena los campos obligatorios (Nombre, Capacidad, Tipo).');
+  const availableTables = tables.filter(t => t.available);
+  // Get unique zones
+  const availableZones = Array.from(new Set(availableTables.map(t => t.zone || 'Otros'))).sort();
+  const tablesInSelectedZone = availableTables.filter(t => (t.zone || 'Otros') === selectedZone).sort((a, b) => a.name.localeCompare(b.name));
+
+  const handleCreate = async () => {
+    if (!buyerName || !capacity || !selectedType || !ticketCategory) {
+      Alert.alert('Error', 'Por favor llena los campos obligatorios (Nombre, Capacidad, Tipo de boleta y Producto/Mesa).');
       return;
     }
     
-    // adminCreateTicket(buyerName, phone, selectedType, parseInt(capacity), selectedTable || undefined);
-    Alert.alert('Aviso', 'La creación de tickets desde la App está deshabilitada temporalmente en modo Real DB.');
-    
-    // Reset
-    setBuyerName('');
-    setPhone('');
-    setCapacity('1');
-    setSelectedType('');
-    setSelectedTable('');
-    setModalVisible(false);
+    setIsSubmitting(true);
+    const { success, error } = await adminCreateTicket(
+      buyerName, 
+      phone, 
+      email,
+      selectedType, 
+      parseInt(capacity), 
+      selectedTable || undefined
+    );
+    setIsSubmitting(false);
+
+    if (success) {
+      Alert.alert('Éxito', 'El QR ha sido generado correctamente.');
+      // Reset
+      setBuyerName('');
+      setPhone('');
+      setEmail('');
+      setCapacity('1');
+      setTicketCategory('');
+      setSelectedType('');
+      setSelectedZone('');
+      setSelectedTable('');
+      setModalVisible(false);
+    } else {
+      Alert.alert('Error', error || 'No se pudo generar el QR.');
+    }
   };
 
   const openQrModal = (ticket: Ticket) => {
@@ -128,85 +149,95 @@ export default function QRManagerScreen() {
   const getTierName = (id?: string) => tiers.find(t => t.id === id)?.name || 'N/A';
   const getTableName = (id?: string) => tables.find(t => t.id === id)?.name || 'N/A';
 
+  const renderHeader = () => (
+    <>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Gestor de QR</Text>
+        <Text style={styles.headerSubtitle}>Administra las entradas y reservas</Text>
+      </View>
+
+      {/* FILTERS SECTION */}
+      <View style={styles.filterSection}>
+        <View style={styles.searchContainer}>
+          <Search color="#8b8378" size={20} style={styles.searchIcon} />
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Buscar por nombre, teléfono o ID..." 
+            placeholderTextColor="#8b8378"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        <View style={styles.filterRow}>
+          <TouchableOpacity 
+            style={[styles.filterBtn, filterStatus === 'all' && styles.filterBtnActive]} 
+            onPress={() => setFilterStatus('all')}
+          >
+            <Text style={[styles.filterBtnText, filterStatus === 'all' && styles.filterBtnTextActive]}>Todos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterBtn, filterStatus === 'available' && styles.filterBtnActive]} 
+            onPress={() => setFilterStatus('available')}
+          >
+            <Text style={[styles.filterBtnText, filterStatus === 'available' && styles.filterBtnTextActive]}>Disponibles</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterBtn, filterStatus === 'used' && styles.filterBtnActive]} 
+            onPress={() => setFilterStatus('used')}
+          >
+            <Text style={[styles.filterBtnText, filterStatus === 'used' && styles.filterBtnTextActive]}>Usados</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </>
+  );
+
+  const renderItem = ({ item: ticket }: { item: Ticket }) => {
+    const isUsed = ticket.accesos_restantes === 0;
+    return (
+      <TouchableOpacity style={[styles.ticketCard, isUsed && { opacity: 0.6 }]} onPress={() => openQrModal(ticket)}>
+        <View style={styles.ticketInfo}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <Text style={styles.ticketName}>{ticket.buyer_name}</Text>
+            {isUsed && (
+              <View style={[styles.statusBadge, { backgroundColor: '#fff0f0' }]}>
+                <Text style={[styles.statusBadgeText, { color: '#ff4d4d' }]}>AGOTADO</Text>
+              </View>
+            )}
+          </View>
+          <Text style={styles.ticketMeta}>Teléfono: {ticket.buyer_phone || 'N/A'}</Text>
+          <Text style={styles.ticketMeta}>Tipo: {availableProducts.find(p => p.id === ticket.ticket_name)?.name || ticket.ticket_name?.toUpperCase()}</Text>
+          {ticket.zone && ticket.ticket_number && (
+            <Text style={styles.ticketMeta}>Zona: {ticket.zone} #{ticket.ticket_number}</Text>
+          )}
+          <Text style={[styles.ticketMeta, { color: '#1a1614', fontFamily: 'NunitoSans_700Bold', marginTop: 4 }]}>
+            Aforo: {ticket.total_accesos} (Disponibles: {ticket.accesos_restantes})
+          </Text>
+        </View>
+        <View style={styles.qrPreviewContainer}>
+          <Image 
+            source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${ticket.order_id}` }} 
+            style={styles.qrPreview} 
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Gestor de QR</Text>
-          <Text style={styles.headerSubtitle}>Administra las entradas y reservas</Text>
-        </View>
-
-        {/* FILTERS SECTION */}
-        <View style={styles.filterSection}>
-          <View style={styles.searchContainer}>
-            <Search color="#8b8378" size={20} style={styles.searchIcon} />
-            <TextInput 
-              style={styles.searchInput} 
-              placeholder="Buscar por nombre, teléfono o ID..." 
-              placeholderTextColor="#8b8378"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-
-          <View style={styles.filterRow}>
-            <TouchableOpacity 
-              style={[styles.filterBtn, filterStatus === 'all' && styles.filterBtnActive]} 
-              onPress={() => setFilterStatus('all')}
-            >
-              <Text style={[styles.filterBtnText, filterStatus === 'all' && styles.filterBtnTextActive]}>Todos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.filterBtn, filterStatus === 'available' && styles.filterBtnActive]} 
-              onPress={() => setFilterStatus('available')}
-            >
-              <Text style={[styles.filterBtnText, filterStatus === 'available' && styles.filterBtnTextActive]}>Disponibles</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.filterBtn, filterStatus === 'used' && styles.filterBtnActive]} 
-              onPress={() => setFilterStatus('used')}
-            >
-              <Text style={[styles.filterBtnText, filterStatus === 'used' && styles.filterBtnTextActive]}>Usados</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        {filteredTickets.length === 0 ? (
-          <Text style={styles.emptyText}>No se encontraron tickets.</Text>
-        ) : (
-          filteredTickets.map(ticket => {
-            const isUsed = ticket.accesos_restantes === 0;
-            return (
-              <TouchableOpacity key={ticket.id} style={[styles.ticketCard, isUsed && { opacity: 0.6 }]} onPress={() => openQrModal(ticket)}>
-                <View style={styles.ticketInfo}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                    <Text style={styles.ticketName}>{ticket.buyer_name}</Text>
-                    {isUsed && (
-                      <View style={[styles.statusBadge, { backgroundColor: '#fff0f0' }]}>
-                        <Text style={[styles.statusBadgeText, { color: '#ff4d4d' }]}>AGOTADO</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.ticketMeta}>Teléfono: {ticket.buyer_phone || 'N/A'}</Text>
-                  <Text style={styles.ticketMeta}>Tipo: {availableProducts.find(p => p.id === ticket.ticket_name)?.name || ticket.ticket_name?.toUpperCase()}</Text>
-                  {ticket.zone && ticket.ticket_number && (
-                    <Text style={styles.ticketMeta}>Zona: {ticket.zone} #{ticket.ticket_number}</Text>
-                  )}
-                  <Text style={[styles.ticketMeta, { color: '#1a1614', fontFamily: 'NunitoSans_700Bold', marginTop: 4 }]}>
-                    Aforo: {ticket.total_accesos} (Disponibles: {ticket.accesos_restantes})
-                  </Text>
-                </View>
-                <View style={styles.qrPreviewContainer}>
-                  <Image 
-                    source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${ticket.order_id}` }} 
-                    style={styles.qrPreview} 
-                  />
-                </View>
-              </TouchableOpacity>
-            )
-          })
-        )}
-      </ScrollView>
+      <FlatList
+        data={filteredTickets}
+        keyExtractor={t => t.id}
+        renderItem={renderItem}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={<Text style={styles.emptyText}>No se encontraron tickets.</Text>}
+        contentContainerStyle={styles.scrollContent}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+      />
 
       {user?.role === 'admin' && (
         <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
@@ -225,51 +256,154 @@ export default function QRManagerScreen() {
               </TouchableOpacity>
             </View>
             
-            <ScrollView style={styles.modalForm}>
-              <Text style={styles.label}>Nombre del Comprador *</Text>
-              <TextInput style={styles.input} value={buyerName} onChangeText={setBuyerName} placeholder="Ej. Juan Pérez" />
+            <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
+              
+              <View style={styles.formSection}>
+                <Text style={styles.sectionTitle}>Información del Cliente</Text>
+                
+                <Text style={styles.label}>Nombre Completo *</Text>
+                <TextInput style={styles.input} value={buyerName} onChangeText={setBuyerName} placeholder="Ej. Juan Pérez" placeholderTextColor="#b0a8a0" />
 
-              <Text style={styles.label}>Teléfono (WhatsApp)</Text>
-              <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Ej. +573000000000" keyboardType="phone-pad" />
+                <Text style={styles.label}>Teléfono (WhatsApp)</Text>
+                <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Ej. +573000000000" keyboardType="phone-pad" placeholderTextColor="#b0a8a0" />
 
-              <Text style={styles.label}>Cantidad de Personas *</Text>
-              <TextInput style={styles.input} value={capacity} onChangeText={setCapacity} placeholder="1" keyboardType="numeric" />
-
-              <Text style={styles.label}>Tipo de Boleto / Producto *</Text>
-              <View style={styles.pickerContainer}>
-                {availableProducts.length === 0 && <Text style={{color: '#686a54', fontSize: 12}}>No hay productos en la etapa actual</Text>}
-                {availableProducts.map(p => (
-                  <TouchableOpacity 
-                    key={p.id} 
-                    style={[styles.pickerItem, selectedType === p.id && styles.pickerItemActive]}
-                    onPress={() => setSelectedType(p.id)}
-                  >
-                    <Text style={[styles.pickerItemText, selectedType === p.id && styles.pickerItemTextActive]}>{p.name}</Text>
-                  </TouchableOpacity>
-                ))}
+                <Text style={styles.label}>Correo Electrónico</Text>
+                <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Ej. juan@correo.com" keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#b0a8a0" />
               </View>
 
-              <Text style={styles.label}>Mesa (Opcional)</Text>
-              <View style={styles.pickerContainer}>
-                <TouchableOpacity 
-                    style={[styles.pickerItem, selectedTable === '' && styles.pickerItemActive]}
-                    onPress={() => setSelectedTable('')}
-                  >
-                    <Text style={[styles.pickerItemText, selectedTable === '' && styles.pickerItemTextActive]}>Ninguna</Text>
-                </TouchableOpacity>
-                {tables.map(t => (
+              <View style={styles.formSection}>
+                <Text style={styles.sectionTitle}>Detalles del Boleto</Text>
+                
+                <Text style={styles.label}>Tipo de boleta *</Text>
+                <View style={styles.pickerContainer}>
+                  {['entrada', 'mesa', 'cama'].map(cat => (
+                    <TouchableOpacity 
+                      key={cat} 
+                      style={[styles.pickerItem, ticketCategory === cat && styles.pickerItemActive]}
+                      onPress={() => {
+                        setTicketCategory(cat as any);
+                        setSelectedType('');
+                        setSelectedZone('');
+                        setSelectedTable('');
+                        setCapacity('1');
+                      }}
+                    >
+                      <Text style={[styles.pickerItemText, ticketCategory === cat && styles.pickerItemTextActive]}>{cat.toUpperCase()}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {ticketCategory === 'entrada' && (
+                  <>
+                    <Text style={styles.label}>Entrada *</Text>
+                    <View style={styles.pickerContainer}>
+                      {availableProducts.filter(p => p.type === 'ticket').map(p => (
+                        <TouchableOpacity 
+                          key={p.id} 
+                          style={[styles.pickerItem, selectedType === p.id && styles.pickerItemActive]}
+                          onPress={() => setSelectedType(p.id)}
+                        >
+                          <Text style={[styles.pickerItemText, selectedType === p.id && styles.pickerItemTextActive]}>{p.name}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </>
+                )}
+
+                {(ticketCategory === 'mesa' || ticketCategory === 'cama') && (
+                  <>
+                    <Text style={styles.label}>Zona *</Text>
+                    <View style={styles.pickerContainer}>
+                      {Array.from(new Set(availableTables
+                        .filter(t => ticketCategory === 'cama' ? t.name.toLowerCase().includes('cama') : !t.name.toLowerCase().includes('cama'))
+                        .map(t => t.zone || 'Otros'))).sort().map(zone => (
+                        <TouchableOpacity 
+                          key={zone} 
+                          style={[styles.pickerItem, selectedZone === zone && styles.pickerItemActive]}
+                          onPress={() => { 
+                            setSelectedZone(zone); 
+                            setSelectedTable(''); 
+                            setCapacity('1'); 
+                          }}
+                        >
+                          <Text style={[styles.pickerItemText, selectedZone === zone && styles.pickerItemTextActive]}>{zone}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    
+                    {selectedZone ? (
+                      <>
+                        <Text style={styles.label}>Qué numero *</Text>
+                        <View style={styles.pickerContainer}>
+                          {availableTables
+                            .filter(t => (ticketCategory === 'cama' ? t.name.toLowerCase().includes('cama') : !t.name.toLowerCase().includes('cama')) && (t.zone || 'Otros') === selectedZone)
+                            .map(t => (
+                             <TouchableOpacity 
+                               key={t.id} 
+                               style={[styles.pickerItem, selectedTable === t.id && styles.pickerItemActive]}
+                               onPress={() => { 
+                                 setSelectedTable(t.id); 
+                                 setCapacity(t.persons.toString()); 
+                                 // The Table ID is its product ID in the backend
+                                 setSelectedType(t.id); 
+                               }}
+                             >
+                               <Text style={[styles.pickerItemText, selectedTable === t.id && styles.pickerItemTextActive]}>{t.name} #{t.number}</Text>
+                             </TouchableOpacity>
+                          ))}
+                        </View>
+                      </>
+                    ) : null}
+                  </>
+                )}
+
+                <Text style={styles.label}>Etapa *</Text>
+                
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                   <TouchableOpacity 
-                    key={t.id} 
-                    style={[styles.pickerItem, selectedTable === t.id && styles.pickerItemActive]}
-                    onPress={() => setSelectedTable(t.id)}
+                    style={{
+                      width: 20, height: 20, borderRadius: 4, borderWidth: 2, 
+                      borderColor: allowTierChange ? '#1a1614' : '#b0a8a0', 
+                      backgroundColor: allowTierChange ? '#1a1614' : 'transparent',
+                      marginRight: 8,
+                      alignItems: 'center', justifyContent: 'center'
+                    }}
+                    onPress={() => {
+                      setAllowTierChange(!allowTierChange);
+                      if (allowTierChange) setCustomTierId('');
+                    }}
                   >
-                    <Text style={[styles.pickerItemText, selectedTable === t.id && styles.pickerItemTextActive]}>{t.name}</Text>
+                    {allowTierChange && <Text style={{color: '#fff', fontSize: 12, fontWeight: 'bold'}}>✓</Text>}
                   </TouchableOpacity>
-                ))}
+                  <Text style={{color: '#8b8378', fontSize: 13, fontFamily: 'NunitoSans_600SemiBold'}}>
+                    Quiero cambiar la etapa manualmente
+                  </Text>
+                </View>
+
+                {allowTierChange ? (
+                  <View style={styles.pickerContainer}>
+                    {tiers.map(t => (
+                      <TouchableOpacity 
+                        key={t.id} 
+                        style={[styles.pickerItem, (customTierId || activeTier?.id) === t.id && styles.pickerItemActive]}
+                        onPress={() => setCustomTierId(t.id)}
+                      >
+                        <Text style={[styles.pickerItemText, (customTierId || activeTier?.id) === t.id && styles.pickerItemTextActive]}>
+                          {t.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <TextInput style={[styles.input, { backgroundColor: '#f0ebe1', color: '#8b8378' }]} value={activeTier?.name || 'Cargando...'} editable={false} />
+                )}
+
+                <Text style={styles.label}>Cantidad en Aforo *</Text>
+                <TextInput style={styles.input} value={capacity} onChangeText={setCapacity} placeholder="Ej. 2" keyboardType="numeric" placeholderTextColor="#b0a8a0" />
               </View>
 
-              <TouchableOpacity style={styles.submitBtn} onPress={handleCreate}>
-                <Text style={styles.submitBtnText}>Generar QR</Text>
+              <TouchableOpacity style={[styles.submitBtn, isSubmitting && { opacity: 0.5 }]} onPress={handleCreate} disabled={isSubmitting}>
+                <Text style={styles.submitBtnText}>{isSubmitting ? 'Generando código...' : 'Generar QR Oficial'}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -491,11 +625,28 @@ const styles = StyleSheet.create({
   modalForm: {
     flex: 1,
   },
+  formSection: {
+    backgroundColor: '#fdfbf9',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.02)',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    color: '#1a1614',
+    fontFamily: 'NunitoSans_800ExtraBold',
+    marginBottom: 16,
+    letterSpacing: -0.3,
+  },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#8b8378',
     marginBottom: 8,
     fontFamily: 'NunitoSans_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   input: {
     backgroundColor: '#ffffff',

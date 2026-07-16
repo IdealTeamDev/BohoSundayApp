@@ -6,12 +6,14 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function ReportsScreen() {
   const { user } = useAuthStore();
   const showRevenue = true; 
   
-  const { tickets } = useDatabaseStore();
+  const { tickets, tables } = useDatabaseStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -142,85 +144,156 @@ export default function ReportsScreen() {
         Alert.alert('Aviso', 'No hay datos para exportar.');
         return;
       }
-      const htmlContent = `
-        <html>
-          <head>
-            <style>
-              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #231e1a; background-color: #f4efe9; }
-              h1 { color: #47311f; font-size: 32px; border-bottom: 2px solid #686a54; padding-bottom: 10px; }
-              .grid { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
-              .card { flex: 1; min-width: 200px; background-color: #d9d1c0; padding: 20px; border-radius: 12px; }
-              .card-title { font-size: 14px; color: #686a54; text-transform: uppercase; margin-bottom: 5px; }
-              .stat { font-size: 28px; font-weight: bold; color: #47311f; margin: 0; }
-              .bar-track { background-color: #bdb39b; border-radius: 8px; height: 12px; width: 100%; margin-top: 8px; overflow: hidden; }
-              .bar-fill { background-color: #686a54; height: 100%; border-radius: 8px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-              th, td { text-align: left; padding: 12px; border-bottom: 1px solid #bdb39b; }
-              th { background-color: #d9d1c0; color: #47311f; font-weight: 600; }
-            </style>
-          </head>
-          <body>
-            <h1>Boho Sunday - Reporte Detallado</h1>
-            <p>Fecha de emisión: ${new Date().toLocaleDateString()}</p>
-            
-            <div class="grid">
-              ${showRevenue ? `
-              <div class="card">
-                <div class="card-title">Ingresos Totales</div>
-                <p class="stat">$${totalRevenue}</p>
-              </div>
-              ` : ''}
-              <div class="card">
-                <div class="card-title">Aforo (Ingresaron / Vendidos)</div>
-                <p class="stat">${totalArrived} / ${totalCapacity}</p>
-                <div class="bar-track"><div class="bar-fill" style="width: ${Math.min(overallPercentage, 100)}%;"></div></div>
-              </div>
-            </div>
 
-            <h2 style="margin-top: 40px; color: #47311f;">Desglose por Etapas (Tiers)</h2>
-            ${salesByTier.map(data => `
-              <div style="margin-bottom: 25px; padding: 15px; border-left: 4px solid #686a54; background: #fff;">
-                <h3 style="margin: 0 0 10px 0; color: #47311f;">${data.name}</h3>
-                ${showRevenue ? `<p style="margin:0; font-size: 14px; color: #231e1a;"><strong>Ingresos:</strong> $${data.revenue}</p>` : ''}
-                
-                <p style="margin: 15px 0 5px 0; font-size: 12px; color: #686a54;">Ventas: ${data.sold}</p>
-                
-                <p style="margin: 15px 0 5px 0; font-size: 12px; color: #686a54;">Asistencia Real: ${data.entered} de ${data.sold} tickets vendidos (${Math.round(data.enteredPercentage)}%)</p>
-                <div class="bar-track"><div class="bar-fill" style="width: ${Math.min(data.enteredPercentage, 100)}%; background-color: #47311f;"></div></div>
-              </div>
-            `).join('')}
+      const doc = new jsPDF();
+      let yPos = 20;
 
-            <h2 style="margin-top: 40px; color: #47311f;">Últimos Escaneos Registrados</h2>
-            <table>
-              <tr>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Cantidad</th>
-                <th>Ingresaron</th>
-              </tr>
-              ${filteredOrders.filter(o => o.accessesUsed > 0).slice(0, 20).map(o => `
-                <tr>
-                  <td>${o.buyerInfo?.name}</td>
-                  <td>${o.ticketName}</td>
-                  <td>${o.quantity}</td>
-                  <td>${o.accessesUsed}</td>
-                </tr>
-              `).join('')}
-            </table>
-          </body>
-        </html>
-      `;
+      // Title
+      doc.setFontSize(22);
+      doc.setTextColor(71, 49, 31);
+      doc.text('Boho Sunday - Reporte Detallado', 14, yPos);
+      yPos += 10;
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 14, yPos);
+      yPos += 15;
 
+      // SECTION 1: Resumen General
+      doc.setFontSize(16);
+      doc.setTextColor(71, 49, 31);
+      doc.text('Resumen General', 14, yPos);
+      yPos += 5;
+      
+      const summaryBody = [];
+      if (showRevenue) summaryBody.push(['Ingresos Totales', `$${totalRevenue.toLocaleString()}`]);
+      summaryBody.push(['Aforo (Ingresaron / Vendidos)', `${totalArrived} / ${totalCapacity}`]);
+      summaryBody.push(['Porcentaje de Asistencia', `${Math.round(overallPercentage)}%`]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Métrica', 'Valor']],
+        body: summaryBody,
+        theme: 'grid',
+        headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+
+      // SECTION 2: Desglose por Etapas (Tiers)
+      doc.setFontSize(16);
+      doc.text('Desglose por Etapas', 14, yPos);
+      yPos += 5;
+
+      const tiersHead = showRevenue ? ['Etapa', 'Vendidos', 'Ingresaron', 'Asistencia', 'Ingresos'] : ['Etapa', 'Vendidos', 'Ingresaron', 'Asistencia'];
+      const tiersBody = salesByTier.map(t => {
+        const row = [t.name, t.sold.toString(), t.entered.toString(), `${Math.round(t.enteredPercentage)}%`];
+        if (showRevenue) row.push(`$${t.revenue.toLocaleString()}`);
+        return row;
+      });
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [tiersHead],
+        body: tiersBody,
+        theme: 'striped',
+        headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+
+      // SECTION 3: Estado de Mesas
+      if (tables && tables.length > 0) {
+        const tablesStats = { free: 0, reserved: 0, occupied: 0, blocked: 0 };
+        const tableData: string[][] = [];
+        
+        tables.forEach(table => {
+          const ticket = Object.values(tickets).find(t => t.ticket_id === table.id);
+          let statusText = '';
+          if (table.available) {
+             tablesStats.free++;
+             statusText = 'Libre';
+          } else if (!ticket) {
+             tablesStats.blocked++;
+             statusText = 'Bloqueada';
+          } else if (ticket.accesos_restantes === ticket.total_accesos) {
+             tablesStats.reserved++;
+             statusText = 'Reservada';
+          } else {
+             tablesStats.occupied++;
+             statusText = 'Ocupada';
+          }
+          
+          tableData.push([
+            `${table.name} ${table.id.split('-').pop()}`,
+            `${table.persons} pax`,
+            statusText,
+            ticket ? ticket.buyer_name || 'Desconocido' : '-'
+          ]);
+        });
+
+        doc.setFontSize(16);
+        doc.text('Estado de Mesas', 14, yPos);
+        yPos += 5;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Libres: ${tablesStats.free} | Reservadas: ${tablesStats.reserved} | Ocupadas: ${tablesStats.occupied} | Bloqueadas: ${tablesStats.blocked}`, 14, yPos);
+        yPos += 5;
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Mesa', 'Aforo', 'Estado', 'Comprador']],
+          body: tableData,
+          theme: 'striped',
+          headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 15;
+      }
+
+      // SECTION 4: Listado de Asistentes
+      doc.setFontSize(16);
+      doc.text('Últimos Asistentes Registrados (Max 50)', 14, yPos);
+      yPos += 5;
+
+      const attendeeLogs = filteredOrders
+        .filter(o => o.accessesUsed > 0)
+        .slice(0, 50)
+        .map(o => [
+          o.buyerInfo?.name || 'Desconocido',
+          o.ticketName || 'General',
+          o.quantity.toString(),
+          o.accessesUsed.toString()
+        ]);
+
+      if (attendeeLogs.length > 0) {
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Nombre', 'Tipo / Mesa', 'Accesos Comprados', 'Ingresaron']],
+          body: attendeeLogs,
+          theme: 'grid',
+          headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
+        });
+      } else {
+        doc.setFontSize(12);
+        doc.text('No hay ingresos registrados aún.', 14, yPos);
+      }
+
+      // SAVE/EXPORT LOGIC
       if (Platform.OS === 'web') {
-        await Print.printAsync({ html: htmlContent });
+        doc.save('Boho_Sunday_Reporte.pdf');
         return;
+      } else {
+        const base64 = doc.output('datauristring').split(',')[1];
+        // @ts-ignore
+        const dir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
+        if (!dir) return;
+        const fileUri = dir + 'Boho_Sunday_Reporte.pdf';
+        
+        await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+        
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, { UTI: 'com.adobe.pdf', dialogTitle: 'Compartir Reporte PDF' });
+        }
       }
 
-      const { uri } = await Print.printToFileAsync({ html: htmlContent });
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(uri, { UTI: 'com.adobe.pdf', dialogTitle: 'Compartir PDF' });
-      }
     } catch (e: any) {
       console.log(e);
       Alert.alert('Error', 'No se pudo generar el PDF.');
@@ -251,7 +324,7 @@ export default function ReportsScreen() {
       ) : (
         <>
           <View style={{ marginBottom: 24 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               <TouchableOpacity 
                 style={[styles.filterBtn, filterType === 'all' && styles.filterBtnActive]} 
                 onPress={() => setFilterType('all')}
@@ -267,7 +340,7 @@ export default function ReportsScreen() {
                   <Text style={[styles.filterBtnText, filterType === type && styles.filterBtnTextActive]}>{type}</Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
 
           {/* KPI CARDS */}

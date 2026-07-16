@@ -8,25 +8,25 @@ import { Table } from '../../types';
 export default function TablesManagerScreen() {
   const { user } = useAuthStore();
   const isViewer = user?.role === 'viewer';
-  const { tables, addTable, removeTable, tickets, revokeTableReservation } = useDatabaseStore();
-  const [newTableName, setNewTableName] = useState('');
-  const [newCapacity, setNewCapacity] = useState('10');
-  const [newPrice, setNewPrice] = useState('');
-
+  const { tables, tickets, revokeTableReservation } = useDatabaseStore();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
 
-  const handleAdd = () => {
-    if (newTableName.trim() !== '') {
-      addTable(newTableName, parseInt(newCapacity) || 10, newPrice);
-      setNewTableName('');
-      setNewPrice('');
+  const getTableStatus = (table: Table) => {
+    if (table.available) return 'available'; // Libre
+    const ticket = Object.values(tickets).find(t => t.ticket_id === table.id);
+    if (!ticket) return 'blocked'; // Sold/Blocked but no ticket found
+    
+    if (ticket.accesos_restantes === ticket.total_accesos) {
+      return 'reserved';
     }
+    return 'occupied';
   };
 
   const getTableColor = (status: string) => {
     switch (status) {
       case 'available': return '#a3c293'; // Greenish
       case 'reserved': return '#e6c77a'; // Yellowish
+      case 'blocked': return '#e6c77a'; // Yellowish as well (reserved manually)
       case 'occupied': return '#ff8585'; // Reddish
       default: return '#d9d1c0';
     }
@@ -42,28 +42,53 @@ export default function TablesManagerScreen() {
 
   const handleRevoke = () => {
     if (selectedTable) {
-      Alert.alert(
-        'Confirmar',
-        '¿Estás seguro de que quieres liberar esta mesa? El código QR asociado quedará invalidado y la mesa se podrá revender.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { 
-            text: 'Liberar Mesa', 
-            style: 'destructive',
-            onPress: () => {
-              revokeTableReservation(selectedTable.id);
-              closeDetails();
+      if (Platform.OS === 'web') {
+        const confirmed = window.confirm('¿Estás seguro de que quieres liberar esta mesa? El código QR asociado quedará invalidado y la mesa se podrá revender.');
+        if (confirmed) {
+          revokeTableReservation(selectedTable.id);
+          closeDetails();
+        }
+      } else {
+        Alert.alert(
+          'Confirmar',
+          '¿Estás seguro de que quieres liberar esta mesa? El código QR asociado quedará invalidado y la mesa se podrá revender.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { 
+              text: 'Liberar Mesa', 
+              style: 'destructive',
+              onPress: () => {
+                revokeTableReservation(selectedTable.id);
+                closeDetails();
+              }
             }
-          }
-        ]
-      );
+          ]
+        );
+      }
     }
   };
 
-  const getTicketForTable = (ticketId?: string) => {
-    if (!ticketId) return null;
-    return tickets[ticketId];
+  const getTicketForTable = (tableId: string) => {
+    return Object.values(tickets).find(t => t.ticket_id === tableId) || null;
   };
+
+  // Sort tables by zone and then number for a cleaner UI grid
+  const sortedTables = [...tables].sort((a, b) => {
+    if (a.zone !== b.zone) {
+      return (a.zone || '').localeCompare(b.zone || '');
+    }
+    // Extract number from id (e.g. oasis-10 vs oasis-2)
+    const numA = parseInt(a.id.split('-').pop() || '0', 10);
+    const numB = parseInt(b.id.split('-').pop() || '0', 10);
+    return numA - numB;
+  });
+  // Group tables by zone
+  const groupedTables = sortedTables.reduce((acc, table) => {
+    const zone = table.zone || 'Otros';
+    if (!acc[zone]) acc[zone] = [];
+    acc[zone].push(table);
+    return acc;
+  }, {} as Record<string, Table[]>);
 
   return (
     <KeyboardAvoidingView 
@@ -72,69 +97,33 @@ export default function TablesManagerScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {!isViewer && (
-          <>
-            <Text style={styles.title}>Añadir Mesa / Cama</Text>
-            
-            <View style={[styles.form, { gap: 0, alignItems: 'center' }]}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Nombre (Ej. Oasis 5)" 
-                  placeholderTextColor="#bdb39b" 
-                  value={newTableName} 
-                  onChangeText={setNewTableName} 
-                />
-              </View>
-              <View style={{ width: 60, marginRight: 8 }}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Aforo" 
-                  placeholderTextColor="#bdb39b" 
-                  keyboardType="numeric" 
-                  value={newCapacity} 
-                  onChangeText={setNewCapacity} 
-                />
-              </View>
-              <View style={{ width: 80, marginRight: 8 }}>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Precio $" 
-                  placeholderTextColor="#bdb39b" 
-                  keyboardType="numeric" 
-                  value={newPrice} 
-                  onChangeText={setNewPrice} 
-                />
-              </View>
-              <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
-                <Plus color="#f4efe9" size={24} />
-              </TouchableOpacity>
-            </View>
-          </>
-        )}
-
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Mapa de Mesas ({tables.length})</Text>
+          <Text style={styles.title}>Mapa de Mesas</Text>
           <View style={styles.legend}>
             <View style={[styles.legendDot, { backgroundColor: '#a3c293' }]} /><Text style={styles.legendText}>Libre</Text>
-            <View style={[styles.legendDot, { backgroundColor: '#e6c77a', marginLeft: 12 }]} /><Text style={styles.legendText}>Res.</Text>
-            <View style={[styles.legendDot, { backgroundColor: '#ff8585', marginLeft: 12 }]} /><Text style={styles.legendText}>Ocup.</Text>
+            <View style={[styles.legendDot, { backgroundColor: '#e6c77a', marginLeft: 8 }]} /><Text style={styles.legendText}>Res.</Text>
+            <View style={[styles.legendDot, { backgroundColor: '#ff8585', marginLeft: 8 }]} /><Text style={styles.legendText}>Ocup.</Text>
           </View>
         </View>
 
-        <View style={styles.gridContainer}>
-          {tables.map(table => (
-            <TouchableOpacity 
-              key={table.id} 
-              style={styles.gridItem}
-              onPress={() => openTableDetails(table)}
-            >
-              <View style={[styles.statusIndicator, { backgroundColor: getTableColor(table.available ? 'available' : 'occupied') }]} />
-              <Text style={styles.gridItemTitle} numberOfLines={1}>{table.name}</Text>
-              <Text style={styles.gridItemMeta}>{table.persons} pax</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {Object.entries(groupedTables).map(([zone, zoneTables]) => (
+          <View key={zone} style={styles.zoneSection}>
+            <Text style={styles.zoneTitle}>{zone.toUpperCase()} ({zoneTables.length})</Text>
+            <View style={styles.gridContainer}>
+              {zoneTables.map(table => (
+                <TouchableOpacity 
+                  key={table.id} 
+                  style={styles.gridItem}
+                  onPress={() => openTableDetails(table)}
+                >
+                  <View style={[styles.statusIndicator, { backgroundColor: getTableColor(getTableStatus(table)) }]} />
+                  <Text style={styles.gridItemTitle} numberOfLines={1}>{table.name} {table.id.split('-').pop()}</Text>
+                  <Text style={styles.gridItemMeta}>{table.persons} pax</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
       </ScrollView>
 
       {/* TABLE DETAILS MODAL */}
@@ -142,7 +131,7 @@ export default function TablesManagerScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             {selectedTable && (() => {
-              const ticket = getTicketForTable(selectedTable.order_id);
+              const ticket = getTicketForTable(selectedTable.id);
               
               return (
                 <>
@@ -155,8 +144,8 @@ export default function TablesManagerScreen() {
 
                   <View style={{ marginBottom: 24 }}>
                     <Text style={styles.infoLabel}>Estado Actual:</Text>
-                    <Text style={[styles.infoValue, { color: getTableColor(selectedTable.available ? 'available' : 'occupied') }]}>
-                      {selectedTable.available ? 'DISPONIBLE PARA VENTA' : 'OCUPADA'}
+                    <Text style={[styles.infoValue, { color: getTableColor(getTableStatus(selectedTable)) }]}>
+                      {getTableStatus(selectedTable) === 'available' ? 'LIBRE (PARA VENTA)' : getTableStatus(selectedTable) === 'reserved' ? 'RESERVADA (ESPERANDO)' : getTableStatus(selectedTable) === 'blocked' ? 'RESERVADA MANUALMENTE (SIN QR)' : 'OCUPADA (EN USO)'}
                     </Text>
                   </View>
 
@@ -183,29 +172,19 @@ export default function TablesManagerScreen() {
                           Han llegado: {ticket.total_accesos - ticket.accesos_restantes} / {ticket.total_accesos}
                         </Text>
                       </View>
-
-                      {!isViewer && (!selectedTable.available) && (
-                        <TouchableOpacity style={styles.revokeBtn} onPress={handleRevoke}>
-                          <RotateCcw color="#fff" size={20} style={{ marginRight: 8 }} />
-                          <Text style={styles.revokeBtnText}>Liberar Mesa / Reventa</Text>
-                        </TouchableOpacity>
-                      )}
                     </View>
                   )}
 
                   {!ticket && (
-                    <Text style={{ textAlign: 'center', color: '#686a54', marginTop: 20 }}>
-                      No hay reservación activa. Puedes asignarla desde la sección Generar QR.
+                    <Text style={{ textAlign: 'center', color: '#686a54', marginTop: 20, marginBottom: 16 }}>
+                      No hay datos de comprador. Probablemente fue bloqueada manualmente desde la web.
                     </Text>
                   )}
-                  
-                  {!isViewer && (
-                    <TouchableOpacity style={styles.deleteTableBtn} onPress={() => {
-                      removeTable(selectedTable.id);
-                      closeDetails();
-                    }}>
-                      <Trash2 color="#ff4d4d" size={20} style={{ marginRight: 8 }} />
-                      <Text style={{ color: '#ff4d4d', fontFamily: 'NunitoSans_700Bold' }}>Eliminar Mesa del Sistema</Text>
+
+                  {(!isViewer && (getTableStatus(selectedTable) === 'reserved' || getTableStatus(selectedTable) === 'blocked')) && (
+                    <TouchableOpacity style={styles.revokeBtn} onPress={handleRevoke}>
+                      <RotateCcw color="#fff" size={20} style={{ marginRight: 8 }} />
+                      <Text style={styles.revokeBtnText}>Liberar Mesa (Volver a Vender)</Text>
                     </TouchableOpacity>
                   )}
                 </>
@@ -259,6 +238,16 @@ const styles = StyleSheet.create({
     color: '#8b8378',
     fontFamily: 'NunitoSans_700Bold',
   },
+  zoneSection: {
+    marginBottom: 24,
+  },
+  zoneTitle: {
+    fontSize: 16,
+    fontFamily: 'NunitoSans_800ExtraBold',
+    color: '#8b8378',
+    marginBottom: 12,
+    letterSpacing: 0.5,
+  },
   form: {
     flexDirection: 'row',
     gap: 8,
@@ -298,23 +287,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    justifyContent: 'space-between',
   },
   gridItem: {
-    width: '30%',
-    aspectRatio: 1,
-    borderRadius: 16,
-    padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: '48%',
     backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+    marginBottom: 4,
+    position: 'relative',
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.03)',
-    position: 'relative',
   },
   statusIndicator: {
     position: 'absolute',
@@ -326,16 +314,17 @@ const styles = StyleSheet.create({
   },
   gridItemTitle: {
     color: '#1a1614',
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'NunitoSans_800ExtraBold',
-    textAlign: 'center',
+    textAlign: 'left',
     marginBottom: 4,
     marginTop: 4,
   },
   gridItemMeta: {
     color: '#8b8378',
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'NunitoSans_600SemiBold',
+    textAlign: 'left',
   },
   modalOverlay: {
     flex: 1,

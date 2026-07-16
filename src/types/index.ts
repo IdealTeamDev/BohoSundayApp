@@ -54,6 +54,7 @@ export interface Table {
   id: string;
   zone: string;
   name: string;
+  number: number;
   persons: number;
   price: string;
   available: boolean;
