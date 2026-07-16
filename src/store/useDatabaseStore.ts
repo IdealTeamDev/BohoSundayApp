@@ -217,7 +217,7 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
       processScan: async (qrCode, count) => {
-        const { tickets, isAirplaneMode, offlineQueue } = get();
+        const { tickets, isOnline, offlineQueue } = get();
         const ticket = tickets[qrCode];
 
         if (!ticket) {

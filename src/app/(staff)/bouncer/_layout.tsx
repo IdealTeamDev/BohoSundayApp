@@ -8,7 +8,7 @@ import LogoutConfirmModal from '../../../components/LogoutConfirmModal';
 
 export default function BouncerLayout() {
   const { logout } = useAuthStore();
-  const { isAirplaneMode, setAirplaneMode, offlineQueue } = useDatabaseStore();
+  const { offlineQueue } = useDatabaseStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
 
   return (
@@ -56,14 +56,13 @@ export default function BouncerLayout() {
             title: 'Asistentes',
             tabBarIcon: ({ color }) => <List color={color} size={24} />,
             headerLeft: () => (
-              <TouchableOpacity onPress={() => setAirplaneMode(!isAirplaneMode)} style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}>
-                <Plane color={isAirplaneMode ? '#eab308' : '#52525b'} size={20} />
-                {offlineQueue.length > 0 && (
-                  <View style={{ backgroundColor: '#ef4444', borderRadius: 10, paddingHorizontal: 6, marginLeft: 4 }}>
-                    <Text style={{ color: '#f4efe9', fontSize: 10, fontFamily: 'NunitoSans_600SemiBold' }}>{offlineQueue.length}</Text>
+              offlineQueue.length > 0 ? (
+                <View style={{ marginLeft: 16, flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ backgroundColor: '#ef4444', borderRadius: 10, paddingHorizontal: 6 }}>
+                    <Text style={{ color: '#f4efe9', fontSize: 10, fontFamily: 'NunitoSans_600SemiBold' }}>{offlineQueue.length} ptes</Text>
                   </View>
-                )}
-              </TouchableOpacity>
+                </View>
+              ) : null
             ),
             headerRight: () => (
               <TouchableOpacity onPress={() => setLogoutVisible(true)} style={{ marginRight: 16 }}>
