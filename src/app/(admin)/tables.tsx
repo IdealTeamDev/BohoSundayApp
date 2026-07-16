@@ -118,7 +118,7 @@ export default function TablesManagerScreen() {
                   onPress={() => openTableDetails(table)}
                 >
                   <View style={[styles.statusIndicator, { backgroundColor: getTableColor(getTableStatus(table)) }]} />
-                  <Text style={styles.gridItemTitle} numberOfLines={1}>{table.name} {table.id.split('-').pop()}</Text>
+                  <Text style={styles.gridItemTitle} numberOfLines={2}>{table.name} {table.id.split('-').pop()}</Text>
                   <Text style={styles.gridItemMeta}>{table.persons} pax</Text>
                 </TouchableOpacity>
               ))}
