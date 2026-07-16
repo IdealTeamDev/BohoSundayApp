@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { api, OrderInfo } from '../../../services/api';
-import { Users, CheckCircle, XCircle } from 'lucide-react-native';
+import { api } from '../../../services/api';
+import { Users, CheckCircle, XCircle, WifiOff } from 'lucide-react-native';
+import { useDatabaseStore } from '../../../store/useDatabaseStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,9 +15,11 @@ export default function ScannerScreen() {
   const [message, setMessage] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [orderInfo, setOrderInfo] = useState<OrderInfo | null>(null);
+  const [orderInfo, setOrderInfo] = useState<any>(null);
   const [showPartialModal, setShowPartialModal] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState('');
+  
+  const { tickets, processScan, isOnline, offlineQueue } = useDatabaseStore();
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -42,7 +45,11 @@ export default function ScannerScreen() {
   const fetchOrderInfo = async (orderId: string) => {
     setLoading(true);
     try {
-      const info = await api.getQrInfo(orderId);
+      const info = tickets[orderId];
+      if (!info) {
+        showFeedback('error', 'El código QR no existe o es falso.');
+        return;
+      }
       setOrderInfo(info);
       
       if (info.status !== 'paid') {
@@ -69,14 +76,15 @@ export default function ScannerScreen() {
     setShowPartialModal(false);
     setLoading(true);
     try {
-      const res = await api.validateQr(currentOrderId, count);
+      const res = await processScan(currentOrderId, count);
       if (res.success) {
-        showFeedback('success', `${count} acceso(s) confirmado(s).\nQuedan ${res.accesos_restantes}.`);
+        const remaining = (orderInfo?.accesos_restantes || count) - count;
+        showFeedback('success', `${count} acceso(s) confirmado(s).\nQuedan ${remaining}.`);
       } else {
-        showFeedback('error', res.error || 'Error al validar.');
+        showFeedback('error', res.message || 'Error al validar.');
       }
     } catch (err: any) {
-      showFeedback('error', err.message || 'Error de conexión.');
+      showFeedback('error', err.message || 'Error de sistema.');
     } finally {
       setLoading(false);
     }
@@ -109,6 +117,14 @@ export default function ScannerScreen() {
 
   return (
     <View style={styles.container}>
+      {!isOnline && (
+        <View style={styles.offlineBanner}>
+          <WifiOff color="#fff" size={16} style={{ marginRight: 8 }} />
+          <Text style={styles.offlineText}>
+            Sin conexión. {offlineQueue.length > 0 ? `(${offlineQueue.length} escaneos en cola)` : 'Escaneos se guardarán localmente.'}
+          </Text>
+        </View>
+      )}
       <CameraView 
         style={StyleSheet.absoluteFill}
         facing="back"
@@ -187,6 +203,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4efe9',
+  },
+  offlineBanner: {
+    backgroundColor: '#ef4444',
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    marginTop: 40,
+  },
+  offlineText: {
+    color: '#fff',
+    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 14,
   },
   targetContainer: {
     ...StyleSheet.absoluteFill,

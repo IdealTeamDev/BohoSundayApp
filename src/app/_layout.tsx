@@ -4,10 +4,11 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useDatabaseStore } from '../store/useDatabaseStore';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold } from '@expo-google-fonts/nunito-sans';
+import NetInfo from '@react-native-community/netinfo';
 
 export default function RootLayout() {
   const { user, deviceId, logout, checkSession } = useAuthStore();
-  const { checkSessionValidity, syncAll } = useDatabaseStore();
+  const { checkSessionValidity, syncAll, setIsOnline } = useDatabaseStore();
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -24,15 +25,28 @@ export default function RootLayout() {
       syncAll(); // Initial sync of data
     }, 100);
 
+    // Network Listener
+    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+      // isConnected can be true even if isInternetReachable is null (initially), so we check carefully
+      const online = !!state.isConnected && state.isInternetReachable !== false;
+      setIsOnline(online);
+    });
+
     // Como Supabase Realtime requiere configuración en el panel de control de la DB
     // que actualmente está deshabilitada por defecto, implementamos un polling
     // cada 5 segundos para mantener las pantallas siempre actualizadas de forma automática.
     const interval = setInterval(() => {
-      syncAll();
+      const { isOnline } = useDatabaseStore.getState();
+      if (isOnline) {
+        syncAll();
+      }
     }, 5000);
 
-    return () => clearInterval(interval);
-  }, [syncAll]);
+    return () => {
+      clearInterval(interval);
+      unsubscribeNetInfo();
+    };
+  }, [syncAll, setIsOnline]);
 
   useEffect(() => {
     if (!isReady) return;

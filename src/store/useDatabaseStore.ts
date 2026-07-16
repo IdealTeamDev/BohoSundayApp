@@ -11,7 +11,7 @@ interface DatabaseState {
   tiers: Tier[];
   staff: StaffMember[];
 
-  isAirplaneMode: boolean;
+  isOnline: boolean;
   offlineQueue: { order_id: string; count: number }[];
   activeDeviceIds: Record<string, string>;
 
@@ -20,7 +20,7 @@ interface DatabaseState {
   subscribeToRealtime: () => void;
   flushOfflineQueue: () => Promise<void>;
 
-  setAirplaneMode: (mode: boolean) => Promise<void>;
+  setIsOnline: (status: boolean) => void;
   processScan: (qrCode: string, count: number) => Promise<{ success: boolean; message: string }>;
   registerSession: (userId: string, deviceId: string) => void;
   checkSessionValidity: (userId: string, deviceId: string) => boolean;
@@ -61,7 +61,7 @@ export const useDatabaseStore = create<DatabaseState>()(
       products: [],
       tiers: [],
       staff: [],
-      isAirplaneMode: false,
+      isOnline: true,
       offlineQueue: [],
       activeDeviceIds: {},
 
@@ -194,10 +194,14 @@ export const useDatabaseStore = create<DatabaseState>()(
         set({ offlineQueue: remainingQueue });
       },
 
-      setAirplaneMode: async (mode) => {
-        set({ isAirplaneMode: mode });
-        if (!mode) {
-          await get().flushOfflineQueue();
+      setIsOnline: (status) => {
+        const { isOnline } = get();
+        if (isOnline !== status) {
+          set({ isOnline: status });
+          if (status) {
+            get().flushOfflineQueue();
+            get().syncAll();
+          }
         }
       },
 
@@ -234,7 +238,7 @@ export const useDatabaseStore = create<DatabaseState>()(
         const updatedTicket: Ticket = { ...ticket, accesos_restantes: newAccesos, status };
         set({ tickets: { ...tickets, [qrCode]: updatedTicket } });
 
-        if (isAirplaneMode) {
+        if (!get().isOnline) {
           set({ offlineQueue: [...offlineQueue, { order_id: qrCode, count }] });
         } else {
           // Push immediately to backend
