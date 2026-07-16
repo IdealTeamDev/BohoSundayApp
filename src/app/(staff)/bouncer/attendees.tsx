@@ -43,17 +43,7 @@ export default function AttendeesScreen() {
       return;
     }
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.order_id}`;
-    const message = `Hola ${selectedTicket.buyer_name},
-
-Aquí tienes tu entrada para *Boho Sunday*.
-
-🎟️ *Tipo:* ${selectedTicket.ticket_name?.toUpperCase() || 'General'}
-👥 *Aforo:* ${selectedTicket.total_accesos} Personas
-
-Tu código de acceso único es: ${selectedTicket.order_id}
-
-📷 *Abre este enlace para ver tu Código QR:*
-${qrImageUrl}`;
+    const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para el Boho Sunday Colombiamoda Edition.\n\n🎟️ Entrada: ${selectedTicket.ticket_name?.toUpperCase() || 'GENERAL'}\n👥 Cantidad: ${selectedTicket.total_accesos} Personas\n\nAbre este enlace para ver tu Código QR:\n${qrImageUrl}`;
     Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
       Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
     });

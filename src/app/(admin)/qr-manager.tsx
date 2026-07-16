@@ -103,7 +103,7 @@ export default function QRManagerScreen() {
     // editTicket(selectedTicket.id, editPhone);
     
     const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.order_id}`;
-    const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para *Boho Sunday*.\n\n🎟️ *Tipo:* ${selectedTicket.ticket_name?.toUpperCase() || 'General'}\n👥 *Aforo:* ${selectedTicket.total_accesos} Personas\n\nTu código de acceso único es: ${selectedTicket.order_id}\n\n📷 *Abre este enlace para ver tu Código QR:*\n${qrImageUrl}`;
+    const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para el Boho Sunday Colombiamoda Edition.\n\n🎟️ Entrada: ${selectedTicket.ticket_name?.toUpperCase() || 'GENERAL'}\n👥 Cantidad: ${selectedTicket.total_accesos} Personas\n\nAbre este enlace para ver tu Código QR:\n${qrImageUrl}`;
     
     Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
       Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
