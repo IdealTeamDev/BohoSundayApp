@@ -35,18 +35,27 @@ export default function AttendeesScreen() {
     setQrModalVisible(true);
   };
 
-  const shareViaWhatsApp = () => {
+  const shareViaWhatsApp = async () => {
     if (!selectedTicket) return;
     const number = editPhone.replace(/\D/g, '');
     if (!number) {
       Alert.alert('Error', 'Ingresa un número de teléfono válido.');
       return;
     }
-    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.order_id}`;
-    const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para el Boho Sunday Colombiamoda Edition.\n\n🎟️ Entrada: ${selectedTicket.ticket_name?.toUpperCase() || 'GENERAL'}\n👥 Cantidad: ${selectedTicket.total_accesos} Personas\n\nAbre este enlace para ver tu Código QR:\n${qrImageUrl}`;
-    Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
-      Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
-    });
+    
+    try {
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedTicket.order_id}`;
+      const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(qrImageUrl)}`);
+      const shortUrl = await response.text();
+      
+      const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para el Boho Sunday Colombiamoda Edition.\n\n🎟️ Entrada: ${selectedTicket.ticket_name?.toUpperCase() || 'GENERAL'}\n👥 Cantidad: ${selectedTicket.total_accesos} Personas\n\nAbre este enlace para ver tu Código QR:\n${shortUrl}`;
+      
+      Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
+        Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
+      });
+    } catch (e) {
+      Alert.alert('Error', 'Hubo un problema al generar el enlace seguro. Intenta de nuevo.');
+    }
   };
 
   const shareQrCode = async () => {
