@@ -29,6 +29,7 @@ export default function AdminLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: '#ffffff', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.03)', shadowOpacity: 0, elevation: 0 },
           headerTintColor: '#1a1614',
+          tabBarLabelPosition: 'below-icon',
           tabBarStyle: { 
             backgroundColor: '#f4efe9', 
             borderTopColor: 'rgba(0,0,0,0.03)',
