@@ -34,6 +34,7 @@ export default function QRManagerScreen() {
   const [customTierId, setCustomTierId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countryModalVisible, setCountryModalVisible] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState('');
   
   // Modal Edit state
   const [editPhone, setEditPhone] = useState('');
@@ -512,12 +513,27 @@ export default function QRManagerScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Seleccionar Indicativo</Text>
-              <TouchableOpacity onPress={() => setCountryModalVisible(false)}>
+              <TouchableOpacity onPress={() => {
+                setCountryModalVisible(false);
+                setCountrySearchQuery('');
+              }}>
                 <X color="#231e1a" size={24} />
               </TouchableOpacity>
             </View>
+
+            <View style={styles.searchContainer}>
+              <Search color="#8b8378" size={20} style={styles.searchIcon} />
+              <TextInput 
+                style={styles.searchInput} 
+                placeholder="Buscar país..." 
+                placeholderTextColor="#8b8378"
+                value={countrySearchQuery}
+                onChangeText={setCountrySearchQuery}
+              />
+            </View>
+
             <FlatList 
-              data={COUNTRIES}
+              data={COUNTRIES.filter(c => c.nameES.toLowerCase().includes(countrySearchQuery.toLowerCase()) || c.phoneCode.includes(countrySearchQuery))}
               keyExtractor={(item) => item.iso2}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
@@ -526,6 +542,7 @@ export default function QRManagerScreen() {
                   onPress={() => {
                     setCountryCode(item.phoneCode);
                     setCountryModalVisible(false);
+                    setCountrySearchQuery('');
                   }}
                 >
                   <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#231e1a' }}>{item.nameES}</Text>
