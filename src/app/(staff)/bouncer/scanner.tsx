@@ -278,7 +278,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    paddingBottom: 48,
+    paddingBottom: 32,
+    maxHeight: '90%',
   },
   modalHeader: {
     alignItems: 'center',
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4efe9',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   infoName: {
     fontSize: 18,
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
   infoDesc: {
     fontSize: 14,
     color: '#686a54',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   modalText: {
     color: '#686a54',
@@ -307,22 +308,22 @@ const styles = StyleSheet.create({
   },
   modalHighlight: {
     color: '#47311f',
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'NunitoSans_600SemiBold',
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
   },
   numberGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 8,
     justifyContent: 'center',
   },
   numBtn: {
     width: '30%',
+    height: 60,
     backgroundColor: '#f4efe9',
-    aspectRatio: 1,
-    borderRadius: 16,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
