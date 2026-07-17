@@ -3,6 +3,7 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
 import { useDatabaseStore } from '../store/useDatabaseStore';
 import { StatusBar } from 'expo-status-bar';
+import { Animated, Text, StyleSheet } from 'react-native';
 import { useFonts, NunitoSans_400Regular, NunitoSans_600SemiBold, NunitoSans_700Bold } from '@expo-google-fonts/nunito-sans';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -18,6 +19,9 @@ export default function RootLayout() {
     NunitoSans_700Bold,
   });
 
+  const [showOnlineBanner, setShowOnlineBanner] = useState(false);
+  const [onlineAnim] = useState(new Animated.Value(-100));
+
   useEffect(() => {
     // Wait for the navigation to be mounted before routing
     setTimeout(() => {
@@ -27,8 +31,28 @@ export default function RootLayout() {
 
     // Network Listener
     const unsubscribeNetInfo = NetInfo.addEventListener(state => {
-      // isConnected can be true even if isInternetReachable is null (initially), so we check carefully
       const online = !!state.isConnected && state.isInternetReachable !== false;
+      
+      const { isOnline } = useDatabaseStore.getState();
+      if (!isOnline && online && isReady) {
+        setShowOnlineBanner(true);
+        Animated.sequence([
+          Animated.timing(onlineAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.delay(3000),
+          Animated.timing(onlineAnim, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        ]).start(() => {
+          setShowOnlineBanner(false);
+        });
+      }
+      
       setIsOnline(online);
     });
 
@@ -88,7 +112,36 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="dark" />
+      {showOnlineBanner && (
+        <Animated.View style={[styles.onlineBanner, { transform: [{ translateY: onlineAnim }] }]}>
+          <Text style={styles.onlineBannerText}>¡Conexión restaurada! Estás online.</Text>
+        </Animated.View>
+      )}
       <Slot />
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  onlineBanner: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    right: 20,
+    backgroundColor: '#22c55e',
+    padding: 16,
+    borderRadius: 12,
+    zIndex: 9999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    alignItems: 'center',
+  },
+  onlineBannerText: {
+    color: '#ffffff',
+    fontFamily: 'NunitoSans_700Bold',
+    fontSize: 14,
+  }
+});
