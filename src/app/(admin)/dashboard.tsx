@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, TextInput, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, TextInput, Modal, Alert, useWindowDimensions } from 'react-native';
 import { Redirect } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -13,6 +13,9 @@ export default function AdminDashboard() {
   const { tiers, addTier, editTier, removeTier, products, addProduct, removeProduct, tickets } = useDatabaseStore();
   if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
   
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
+
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -195,7 +198,7 @@ export default function AdminDashboard() {
       keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#231e1a" />}
     >
-      <View style={styles.content}>
+      <View style={[styles.content, isDesktop && { maxWidth: 1000, alignSelf: 'center', width: '100%' }]}>
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Panel General</Text>
@@ -213,8 +216,8 @@ export default function AdminDashboard() {
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : stats ? (
-          <View style={styles.kpiContainer}>
-            <View style={[styles.kpiCardPrimary]}>
+          <View style={[styles.kpiContainer, isDesktop && { flexDirection: 'row' }]}>
+            <View style={[styles.kpiCardPrimary, isDesktop && { flex: 2 }]}>
               <View style={styles.kpiHeader}>
                 <Text style={[styles.kpiTitle, { color: 'rgba(255,255,255,0.8)' }]}>Ingresos Totales</Text>
                 <View style={styles.iconCircleLight}>
@@ -224,7 +227,7 @@ export default function AdminDashboard() {
               <Text style={[styles.kpiValue, { color: '#f4efe9' }]}>{formatCurrency(stats.totalRevenue)}</Text>
             </View>
 
-            <View style={styles.kpiRow}>
+            <View style={[styles.kpiRow, isDesktop && { flex: 3 }]}>
               <View style={styles.kpiCardSmall}>
                 <View style={styles.kpiHeader}>
                   <Text style={styles.kpiTitle}>Reservas</Text>
@@ -434,7 +437,7 @@ export default function AdminDashboard() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.listContainer}>
+        <View style={[styles.listContainer, { marginBottom: 40 }]}>
           {tiers.length === 0 ? (
             <View style={{ padding: 24, alignItems: 'center' }}>
               <Text style={styles.infoText}>No hay etapas creadas.</Text>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal, Alert, useWindowDimensions } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { formatCOP } from '../../utils/format';
@@ -11,6 +11,8 @@ export default function TablesManagerScreen() {
   const isViewer = user?.role === 'viewer';
   const { tables, tickets, revokeTableReservation } = useDatabaseStore();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
 
   const getTableStatus = (table: Table) => {
     if (table.available) return 'available'; // Libre
@@ -97,7 +99,7 @@ export default function TablesManagerScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100, maxWidth: isDesktop ? 1200 : '100%', alignSelf: 'center', width: '100%' }}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Mapa de Mesas</Text>
           <View style={styles.legend}>
@@ -114,7 +116,7 @@ export default function TablesManagerScreen() {
               {zoneTables.map(table => (
                 <TouchableOpacity 
                   key={table.id} 
-                  style={styles.gridItem}
+                  style={[styles.gridItem, isDesktop && { width: '23%' }]}
                   onPress={() => openTableDetails(table)}
                 >
                   <View style={[styles.statusIndicator, { backgroundColor: getTableColor(getTableStatus(table)) }]} />

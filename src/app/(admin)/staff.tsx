@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, ActivityIndicator, Alert, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, ActivityIndicator, Alert, Modal, Platform, useWindowDimensions } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Redirect } from 'expo-router';
 import { UserPlus, Trash2, KeyRound, Edit2, X } from 'lucide-react-native';
@@ -12,6 +12,9 @@ export default function StaffManagerScreen() {
   
   const [loading, setLoading] = useState(false);
   const [filterRole, setFilterRole] = useState<'all' | 'bouncer' | 'viewer'>('all');
+  
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
   
   const [newName, setNewName] = useState('');
   const [newUsername, setNewUsername] = useState('');
@@ -142,7 +145,7 @@ export default function StaffManagerScreen() {
   if (user?.role === 'viewer') return <Redirect href="/(admin)/tables" />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40, paddingTop: 10, maxWidth: isDesktop ? 1200 : '100%', alignSelf: 'center', width: '100%' }}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Gestión de Personal</Text>
         <Text style={styles.headerSubtitle}>Administra porteros y espectadores</Text>
@@ -203,12 +206,20 @@ export default function StaffManagerScreen() {
       {loading ? (
         <ActivityIndicator size="large" color="#1a1614" style={{ marginTop: 20 }} />
       ) : (
-        <View style={styles.listContainer}>
+        <View style={[styles.listContainer, isDesktop && { flexDirection: 'row', flexWrap: 'wrap', gap: 16, padding: 0, backgroundColor: 'transparent', borderWidth: 0, elevation: 0 }]}>
           {staff.length === 0 ? (
             <Text style={styles.emptyText}>No hay personal registrado.</Text>
           ) : (
             staff.filter(member => filterRole === 'all' || member.role === filterRole).map((member: StaffMember, idx) => (
-              <View key={member.id} style={[styles.listItem, idx === staff.length - 1 && { borderBottomWidth: 0 }, !member.is_active && { opacity: 0.5 }]}>
+              <View 
+                key={member.id} 
+                style={[
+                  styles.listItem, 
+                  idx === staff.length - 1 && !isDesktop && { borderBottomWidth: 0 }, 
+                  !member.is_active && { opacity: 0.5 },
+                  isDesktop && { width: '31%', borderRadius: 16, backgroundColor: '#ffffff', borderWidth: 1, borderColor: 'rgba(0,0,0,0.03)' }
+                ]}
+              >
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.listItemName, { fontSize: 18, marginBottom: 4 }]}>{member.username}</Text>
                   <View style={{ marginBottom: 6, flexDirection: 'row' }}>

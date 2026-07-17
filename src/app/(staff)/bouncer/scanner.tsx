@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, ActivityIndicator, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { api } from '../../../services/api';
@@ -223,6 +223,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4efe9',
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 500 : '100%',
   },
   offlineBanner: {
     backgroundColor: '#ef4444',

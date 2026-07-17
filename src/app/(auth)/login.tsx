@@ -210,6 +210,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4efe9',
     justifyContent: 'center',
     padding: 24,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 450 : '100%',
   },
   header: {
     alignItems: 'center',

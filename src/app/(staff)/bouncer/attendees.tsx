@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, useWindowDimensions } from 'react-native';
 import { useDatabaseStore } from '../../../store/useDatabaseStore';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { Ticket } from '../../../types';
@@ -12,6 +12,10 @@ export default function AttendeesScreen() {
   const { tickets, processScan } = useDatabaseStore();
   const { user } = useAuthStore();
   const [search, setSearch] = useState('');
+  
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
+  const numColumns = isDesktop ? 3 : 1;
 
   const ticketsArray = (Object.values(tickets) as Ticket[]).filter(t => 
     t.buyer_name?.toLowerCase().includes(search.toLowerCase()) || 
@@ -100,7 +104,7 @@ export default function AttendeesScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBox}>
+      <View style={[styles.searchBox, isDesktop && { maxWidth: 1200, alignSelf: 'center', width: '100%' }]}>
         <Search color="#686a54" size={20} />
         <TextInput
           style={styles.input}
@@ -112,15 +116,18 @@ export default function AttendeesScreen() {
       </View>
 
       <FlatList
+        key={numColumns}
         data={ticketsArray}
+        numColumns={numColumns}
+        columnWrapperStyle={isDesktop ? { gap: 16, paddingHorizontal: 4 } : undefined}
         keyExtractor={item => item.id}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40, maxWidth: isDesktop ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
         renderItem={({ item }) => {
           const remaining = item.accesos_restantes;
           const isComplete = remaining === 0;
 
           return (
-            <TouchableOpacity onPress={() => openQrModal(item)} style={[styles.card, item.status === 'invalid' && { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }]}>
+            <TouchableOpacity onPress={() => openQrModal(item)} style={[styles.card, item.status === 'invalid' && { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }, isDesktop && { flex: 1, marginBottom: 16 }]}>
               <View style={styles.cardContent}>
                 <Text style={styles.name}>{item.buyer_name}</Text>
                 <Text style={styles.meta}>Código: {item.order_id}</Text>
