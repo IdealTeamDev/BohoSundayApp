@@ -6,6 +6,7 @@ import { Plus, X, Share2, MessageCircle, Search, Filter } from 'lucide-react-nat
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Ticket } from '../../types';
+import { COUNTRIES } from '../../utils/countries';
 
 export default function QRManagerScreen() {
   const { tickets, tiers, tables, getActiveTier, getFusedProductsForActiveTier, adminCreateTicket } = useDatabaseStore();
@@ -21,7 +22,9 @@ export default function QRManagerScreen() {
   // Form state
   const [buyerName, setBuyerName] = useState('');
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('57');
   const [email, setEmail] = useState('');
+  const [language, setLanguage] = useState<'ES'|'EN'>('ES');
   const [capacity, setCapacity] = useState('1');
   const [ticketCategory, setTicketCategory] = useState<'entrada'|'mesa'|'cama'|''>('');
   const [selectedType, setSelectedType] = useState<string>('');
@@ -30,6 +33,7 @@ export default function QRManagerScreen() {
   const [allowTierChange, setAllowTierChange] = useState(false);
   const [customTierId, setCustomTierId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countryModalVisible, setCountryModalVisible] = useState(false);
   
   // Modal Edit state
   const [editPhone, setEditPhone] = useState('');
@@ -57,16 +61,18 @@ export default function QRManagerScreen() {
   const tablesInSelectedZone = availableTables.filter(t => (t.zone || 'Otros') === selectedZone).sort((a, b) => a.name.localeCompare(b.name));
 
   const handleCreate = async () => {
-    if (!buyerName || !capacity || !selectedType || !ticketCategory) {
-      Alert.alert('Error', 'Por favor llena los campos obligatorios (Nombre, Capacidad, Tipo de boleta y Producto/Mesa).');
+    if (!buyerName || !capacity || !selectedType || !ticketCategory || !phone || !email) {
+      Alert.alert('Error', 'Por favor llena los campos obligatorios (Nombre, Teléfono, Correo, Capacidad, Tipo de boleta y Producto/Mesa).');
       return;
     }
     
     setIsSubmitting(true);
+    const fullPhone = `+${countryCode} ${phone}`;
     const { success, error } = await adminCreateTicket(
       buyerName, 
-      phone, 
+      fullPhone, 
       email,
+      language,
       selectedType, 
       parseInt(capacity), 
       selectedTable || undefined
@@ -79,6 +85,7 @@ export default function QRManagerScreen() {
       setBuyerName('');
       setPhone('');
       setEmail('');
+      setLanguage('ES');
       setCapacity('1');
       setTicketCategory('');
       setSelectedType('');
@@ -276,11 +283,42 @@ export default function QRManagerScreen() {
                 <Text style={styles.label}>Nombre Completo *</Text>
                 <TextInput style={styles.input} value={buyerName} onChangeText={setBuyerName} placeholder="Ej. Juan Pérez" placeholderTextColor="#b0a8a0" />
 
-                <Text style={styles.label}>Teléfono (WhatsApp)</Text>
-                <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Ej. +573000000000" keyboardType="phone-pad" placeholderTextColor="#b0a8a0" />
+                <Text style={styles.label}>Teléfono (WhatsApp) *</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                  <TouchableOpacity 
+                    style={[styles.input, { marginBottom: 0, marginRight: 8, paddingHorizontal: 12, justifyContent: 'center' }]} 
+                    onPress={() => setCountryModalVisible(true)}
+                  >
+                    <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#231e1a' }}>+{countryCode}</Text>
+                  </TouchableOpacity>
+                  <TextInput 
+                    style={[styles.input, { flex: 1, marginBottom: 0 }]} 
+                    value={phone} 
+                    onChangeText={setPhone} 
+                    placeholder="Ej. 3000000000" 
+                    keyboardType="phone-pad" 
+                    placeholderTextColor="#b0a8a0" 
+                  />
+                </View>
 
-                <Text style={styles.label}>Correo Electrónico</Text>
+                <Text style={styles.label}>Correo Electrónico *</Text>
                 <TextInput style={styles.input} value={email} onChangeText={setEmail} placeholder="Ej. juan@correo.com" keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#b0a8a0" />
+
+                <Text style={styles.label}>Idioma Preferido *</Text>
+                <View style={styles.pickerContainer}>
+                  <TouchableOpacity 
+                    style={[styles.pickerItem, language === 'ES' && styles.pickerItemActive]}
+                    onPress={() => setLanguage('ES')}
+                  >
+                    <Text style={[styles.pickerItemText, language === 'ES' && styles.pickerItemTextActive]}>Español (ES)</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.pickerItem, language === 'EN' && styles.pickerItemActive]}
+                    onPress={() => setLanguage('EN')}
+                  >
+                    <Text style={[styles.pickerItemText, language === 'EN' && styles.pickerItemTextActive]}>English (EN)</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.formSection}>
@@ -462,6 +500,37 @@ export default function QRManagerScreen() {
                 </TouchableOpacity>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL SELECCIONAR PAIS */}
+      <Modal visible={countryModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Seleccionar Indicativo</Text>
+              <TouchableOpacity onPress={() => setCountryModalVisible(false)}>
+                <X color="#231e1a" size={24} />
+              </TouchableOpacity>
+            </View>
+            <FlatList 
+              data={COUNTRIES}
+              keyExtractor={(item) => item.iso2}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f0ebe1', flexDirection: 'row', justifyContent: 'space-between' }}
+                  onPress={() => {
+                    setCountryCode(item.phoneCode);
+                    setCountryModalVisible(false);
+                  }}
+                >
+                  <Text style={{ fontFamily: 'NunitoSans_600SemiBold', color: '#231e1a' }}>{item.nameES}</Text>
+                  <Text style={{ fontFamily: 'NunitoSans_700Bold', color: '#686a54' }}>+{item.phoneCode}</Text>
+                </TouchableOpacity>
+              )}
+            />
           </View>
         </View>
       </Modal>

@@ -30,7 +30,7 @@ interface DatabaseState {
   removeTier: (id: string) => Promise<void>;
   editTier: (id: string, name: string, endDate: string, priceOverrides: Record<string, number>) => Promise<void>;
   revokeTableReservation: (tableId: string) => void;
-  adminCreateTicket: (buyerName: string, phone: string, email: string, productId: string, capacity: number, tableId?: string) => Promise<{ success: boolean; error?: string }>;
+  adminCreateTicket: (buyerName: string, phone: string, email: string, language: string, productId: string, capacity: number, tableId?: string) => Promise<{ success: boolean; error?: string }>;
 
   // Products
   addProduct: (options: { type: 'ticket'|'bed'|'table', name: string, basePrice: number, zone?: string, number?: string, persons?: number, stock?: number }) => Promise<void>;
@@ -293,7 +293,7 @@ export const useDatabaseStore = create<DatabaseState>()(
         }
       },
 
-      adminCreateTicket: async (buyerName, phone, email, productId, capacity, tableId) => {
+      adminCreateTicket: async (buyerName, phone, email, language, productId, capacity, tableId) => {
         try {
           // Generate unique ID like MANUAL-12345
           const orderId = `MANUAL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -322,6 +322,7 @@ export const useDatabaseStore = create<DatabaseState>()(
             buyer_name: buyerName,
             buyer_phone: phone,
             buyer_email: email,
+            language: language || 'ES',
             ticket_name: ticketName,
             ticket_price: product ? product.currentPrice : 0,
             total_accesos: capacity,
