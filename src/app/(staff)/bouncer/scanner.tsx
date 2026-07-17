@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { api } from '../../../services/api';
@@ -174,44 +174,46 @@ export default function ScannerScreen() {
               <Text style={styles.modalTitle}>Validar Ingreso</Text>
             </View>
             
-            {orderInfo && (
-              <View style={styles.infoBox}>
-                <Text style={styles.infoName}>{orderInfo.buyer_name}</Text>
-                <Text style={styles.infoDesc}>{orderInfo.ticket_name} - {orderInfo.zone}</Text>
-                <Text style={styles.modalText}>
-                  Capacidad Total: {orderInfo.total_accesos} | Ya ingresaron: {orderInfo.total_accesos - orderInfo.accesos_restantes}
-                </Text>
-              </View>
-            )}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+              {orderInfo && (
+                <View style={styles.infoBox}>
+                  <Text style={styles.infoName}>{orderInfo.buyer_name}</Text>
+                  <Text style={styles.infoDesc}>{orderInfo.ticket_name} - {orderInfo.zone}</Text>
+                  <Text style={styles.modalText}>
+                    Capacidad Total: {orderInfo.total_accesos} | Ya ingresaron: {orderInfo.total_accesos - orderInfo.accesos_restantes}
+                  </Text>
+                </View>
+              )}
 
-            <Text style={styles.modalHighlight}>¿Cuántos ingresan ahora?</Text>
-            
-            <View style={styles.numberGrid}>
-              {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                <TouchableOpacity 
-                  key={num} 
-                  style={[
-                    styles.numBtn,
-                    (!orderInfo || num > orderInfo.accesos_restantes) && { opacity: 0.3 }
-                  ]}
-                  disabled={!orderInfo || num > orderInfo.accesos_restantes}
-                  onPress={() => processScanTicket(num)}
-                >
-                  <Text style={styles.numText}>{num}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            
-            <TouchableOpacity 
-              style={styles.cancelBtn}
-              onPress={() => {
-                setShowPartialModal(false);
-                setScanned(false);
-                setOrderInfo(null);
-              }}
-            >
-              <Text style={styles.cancelText}>Cancelar / Escanear de nuevo</Text>
-            </TouchableOpacity>
+              <Text style={styles.modalHighlight}>¿Cuántos ingresan ahora?</Text>
+              
+              <View style={styles.numberGrid}>
+                {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                  <TouchableOpacity 
+                    key={num} 
+                    style={[
+                      styles.numBtn,
+                      (!orderInfo || num > orderInfo.accesos_restantes) && { opacity: 0.3 }
+                    ]}
+                    disabled={!orderInfo || num > orderInfo.accesos_restantes}
+                    onPress={() => processScanTicket(num)}
+                  >
+                    <Text style={styles.numText}>{num}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.cancelBtn}
+                onPress={() => {
+                  setShowPartialModal(false);
+                  setScanned(false);
+                  setOrderInfo(null);
+                }}
+              >
+                <Text style={styles.cancelText}>Cancelar / Escanear de nuevo</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
