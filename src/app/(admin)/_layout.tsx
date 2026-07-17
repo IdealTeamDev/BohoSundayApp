@@ -69,14 +69,14 @@ export default function AdminLayout() {
           name="dashboard"
           options={{
             href: isViewer ? null : '/(admin)/dashboard',
-            title: 'Ajustes de Evento',
+            title: 'Ajustes',
             tabBarIcon: ({ color }) => <Settings color={color} size={24} />,
           }}
         />
         <Tabs.Screen
           name="tables"
           options={{
-            title: 'Gestor de Mesas',
+            title: 'Mesas',
             tabBarIcon: ({ color }) => <Grid color={color} size={24} />,
           }}
         />
