@@ -250,7 +250,7 @@ export default function QRManagerScreen() {
         columnWrapperStyle={isDesktop ? { gap: 16, paddingHorizontal: 4 } : undefined}
         keyExtractor={t => t.id}
         renderItem={renderItem}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderHeader()}
         ListEmptyComponent={<Text style={styles.emptyText}>No se encontraron tickets.</Text>}
         contentContainerStyle={[styles.scrollContent, { maxWidth: isDesktop ? 1200 : '100%', alignSelf: 'center', width: '100%' }]}
         initialNumToRender={10}
@@ -462,11 +462,12 @@ export default function QRManagerScreen() {
 
       {/* MODAL VER QR Y COMPARTIR */}
       <Modal visible={qrModalVisible} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.qrModalContent}>
-            <TouchableOpacity style={styles.closeQrBtn} onPress={() => setQrModalVisible(false)}>
-              <X color="#1a1614" size={24} />
-            </TouchableOpacity>
+        <View style={styles.modalOverlayCenter}>
+          <ScrollView contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}} showsVerticalScrollIndicator={false}>
+            <View style={styles.qrModalContent}>
+              <TouchableOpacity style={styles.closeQrBtn} onPress={() => setQrModalVisible(false)}>
+                <X color="#1a1614" size={24} />
+              </TouchableOpacity>
             
             {selectedTicket && (
               <>
@@ -501,6 +502,7 @@ export default function QRManagerScreen() {
               </>
             )}
           </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -684,6 +686,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
+  modalOverlayCenter: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+  },
   modalContent: {
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 32,
@@ -784,7 +791,6 @@ const styles = StyleSheet.create({
   qrModalContent: {
     backgroundColor: '#ffffff',
     margin: 24,
-    marginTop: '30%',
     borderRadius: 32,
     padding: 32,
     alignItems: 'center',
