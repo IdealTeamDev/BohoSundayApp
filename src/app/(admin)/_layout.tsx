@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, Redirect } from 'expo-router';
 import { Settings, Grid, LogOut, FileBarChart, Users, Scan, QrCode, Map } from 'lucide-react-native';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import LogoutConfirmModal from '../../components/LogoutConfirmModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,9 @@ export default function AdminLayout() {
   const { logout, user } = useAuthStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
   const insets = useSafeAreaInsets();
+  
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
   
   if (!user) {
     return <Redirect href="/(auth)/login" />;
@@ -37,6 +40,16 @@ export default function AdminLayout() {
             shadowOpacity: 0.03,
             shadowRadius: 10,
             elevation: 10,
+            ...(isDesktop ? {
+              maxWidth: 600,
+              width: '100%',
+              alignSelf: 'center',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              borderLeftWidth: 1,
+              borderRightWidth: 1,
+              borderColor: 'rgba(0,0,0,0.05)',
+            } : {}),
           },
           tabBarLabelStyle: {
             fontSize: 11,

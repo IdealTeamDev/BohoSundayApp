@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs } from 'expo-router';
 import { Camera, List, BarChart3, LogOut, Plane, Map } from 'lucide-react-native';
-import { TouchableOpacity, View, Text } from 'react-native';
+import { TouchableOpacity, View, Text, useWindowDimensions } from 'react-native';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useDatabaseStore } from '../../../store/useDatabaseStore';
 import LogoutConfirmModal from '../../../components/LogoutConfirmModal';
@@ -10,6 +10,9 @@ export default function BouncerLayout() {
   const { logout } = useAuthStore();
   const { offlineQueue } = useDatabaseStore();
   const [logoutVisible, setLogoutVisible] = useState(false);
+  
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
 
   return (
     <>
@@ -28,6 +31,16 @@ export default function BouncerLayout() {
             shadowOpacity: 0.03,
             shadowRadius: 10,
             elevation: 10,
+            ...(isDesktop ? {
+              maxWidth: 600,
+              width: '100%',
+              alignSelf: 'center',
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              borderLeftWidth: 1,
+              borderRightWidth: 1,
+              borderColor: 'rgba(0,0,0,0.05)',
+            } : {}),
           },
           tabBarLabelStyle: {
             fontSize: 11,
