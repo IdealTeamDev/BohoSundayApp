@@ -303,6 +303,18 @@ export const useDatabaseStore = create<DatabaseState>()(
           const product = getFusedProductsForActiveTier().find(p => p.id === productId);
           const ticketName = product ? product.name : productId;
 
+          // Generar checksum aleatorio
+          const checksum = Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+
+          let zone = null;
+          let ticketNumber = null;
+          
+          const table = get().tables.find(t => t.id === tableId || t.id === productId);
+          if (table) {
+             zone = table.zone;
+             ticketNumber = table.number;
+          }
+
           // Insert into purchased_tickets
           const { error: insertError } = await supabase.from('purchased_tickets').insert({
             order_id: orderId,
@@ -311,10 +323,14 @@ export const useDatabaseStore = create<DatabaseState>()(
             buyer_phone: phone,
             buyer_email: email,
             ticket_name: ticketName,
-            ticket_price: 0, // Manual creation = 0
+            ticket_price: product ? product.currentPrice : 0,
             total_accesos: capacity,
             accesos_restantes: capacity,
-            status: 'paid'
+            status: 'paid',
+            zone: zone,
+            ticket_number: ticketNumber ? parseInt(String(ticketNumber)) : null,
+            checksum: checksum,
+            payment_ref: 'manual-sale'
           });
 
           if (insertError) throw insertError;
