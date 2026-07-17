@@ -7,8 +7,6 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 export default function ReportsScreen() {
   const { user } = useAuthStore();
@@ -146,153 +144,146 @@ export default function ReportsScreen() {
         return;
       }
 
-      const doc = new jsPDF();
-      let yPos = 20;
+      let html = `
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #47311f; padding: 20px; }
+            h1 { font-size: 24px; color: #47311f; margin-bottom: 5px; }
+            h2 { font-size: 18px; color: #47311f; margin-top: 30px; border-bottom: 1px solid #d9d1c0; padding-bottom: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #d9d1c0; padding: 8px; text-align: left; font-size: 14px; }
+            th { background-color: #f0ebe1; color: #47311f; }
+            .date { color: #8b8378; font-size: 12px; margin-bottom: 20px; }
+          </style>
+        </head>
+        <body>
+          <h1>Boho Sunday - Reporte Detallado</h1>
+          <div class="date">Fecha de emisión: ${new Date().toLocaleString()}</div>
 
-      // Title
-      doc.setFontSize(22);
-      doc.setTextColor(71, 49, 31);
-      doc.text('Boho Sunday - Reporte Detallado', 14, yPos);
-      yPos += 10;
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Fecha de emisión: ${new Date().toLocaleDateString()}`, 14, yPos);
-      yPos += 15;
+          <h2>Resumen General</h2>
+          <table>
+            <tr><th>Métrica</th><th>Valor</th></tr>
+      `;
 
-      // SECTION 1: Resumen General
-      doc.setFontSize(16);
-      doc.setTextColor(71, 49, 31);
-      doc.text('Resumen General', 14, yPos);
-      yPos += 5;
-      
-      const summaryBody = [];
-      if (showRevenue) summaryBody.push(['Ingresos Totales', formatCOP(totalRevenue)]);
-      summaryBody.push(['Aforo (Ingresaron / Vendidos)', `${totalArrived} / ${totalCapacity}`]);
-      summaryBody.push(['Porcentaje de Asistencia', `${Math.round(overallPercentage)}%`]);
+      if (showRevenue) html += `<tr><td>Ingresos Totales</td><td>${formatCOP(totalRevenue)}</td></tr>`;
+      html += `
+            <tr><td>Aforo (Ingresaron / Vendidos)</td><td>${totalArrived} / ${totalCapacity}</td></tr>
+            <tr><td>Porcentaje de Asistencia</td><td>${Math.round(overallPercentage)}%</td></tr>
+          </table>
 
-      autoTable(doc, {
-        startY: yPos,
-        head: [['Métrica', 'Valor']],
-        body: summaryBody,
-        theme: 'grid',
-        headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
+          <h2>Desglose por Etapas</h2>
+          <table>
+            <tr>
+              <th>Etapa</th>
+              <th>Vendidos</th>
+              <th>Ingresaron</th>
+              <th>Asistencia</th>
+              ${showRevenue ? '<th>Ingresos</th>' : ''}
+            </tr>
+      `;
+
+      salesByTier.forEach(t => {
+        html += `
+          <tr>
+            <td>${t.name}</td>
+            <td>${t.sold}</td>
+            <td>${t.entered}</td>
+            <td>${Math.round(t.enteredPercentage)}%</td>
+            ${showRevenue ? `<td>${formatCOP(t.revenue)}</td>` : ''}
+          </tr>
+        `;
       });
-      yPos = (doc as any).lastAutoTable.finalY + 15;
+      html += `</table>`;
 
-      // SECTION 2: Desglose por Etapas (Tiers)
-      doc.setFontSize(16);
-      doc.text('Desglose por Etapas', 14, yPos);
-      yPos += 5;
-
-      const tiersHead = showRevenue ? ['Etapa', 'Vendidos', 'Ingresaron', 'Asistencia', 'Ingresos'] : ['Etapa', 'Vendidos', 'Ingresaron', 'Asistencia'];
-      const tiersBody = salesByTier.map(t => {
-        const row = [t.name, t.sold.toString(), t.entered.toString(), `${Math.round(t.enteredPercentage)}%`];
-        if (showRevenue) row.push(formatCOP(t.revenue));
-        return row;
-      });
-
-      autoTable(doc, {
-        startY: yPos,
-        head: [tiersHead],
-        body: tiersBody,
-        theme: 'striped',
-        headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 15;
-
-      // SECTION 3: Estado de Mesas
       if (tables && tables.length > 0) {
         const tablesStats = { free: 0, reserved: 0, occupied: 0, blocked: 0 };
-        const tableData: string[][] = [];
-        
+        tables.forEach(table => {
+          const ticket = Object.values(tickets).find(t => t.ticket_id === table.id);
+          if (table.available) tablesStats.free++;
+          else if (!ticket) tablesStats.blocked++;
+          else if (ticket.accesos_restantes === ticket.total_accesos) tablesStats.reserved++;
+          else tablesStats.occupied++;
+        });
+
+        html += `
+          <h2>Estado de Mesas</h2>
+          <div style="font-size: 13px; color: #686a54; margin-bottom: 10px;">
+            Libres: ${tablesStats.free} | Reservadas: ${tablesStats.reserved} | Ocupadas: ${tablesStats.occupied} | Bloqueadas: ${tablesStats.blocked}
+          </div>
+          <table>
+            <tr><th>Mesa</th><th>Aforo</th><th>Estado</th><th>Comprador</th></tr>
+        `;
+
         tables.forEach(table => {
           const ticket = Object.values(tickets).find(t => t.ticket_id === table.id);
           let statusText = '';
-          if (table.available) {
-             tablesStats.free++;
-             statusText = 'Libre';
-          } else if (!ticket) {
-             tablesStats.blocked++;
-             statusText = 'Bloqueada';
-          } else if (ticket.accesos_restantes === ticket.total_accesos) {
-             tablesStats.reserved++;
-             statusText = 'Reservada';
-          } else {
-             tablesStats.occupied++;
-             statusText = 'Ocupada';
-          }
+          if (table.available) statusText = 'Libre';
+          else if (!ticket) statusText = 'Bloqueada';
+          else if (ticket.accesos_restantes === ticket.total_accesos) statusText = 'Reservada';
+          else statusText = 'Ocupada';
           
-          tableData.push([
-            `${table.name} ${table.id.split('-').pop()}`,
-            `${table.persons} pax`,
-            statusText,
-            ticket ? ticket.buyer_name || 'Desconocido' : '-'
-          ]);
+          html += `
+            <tr>
+              <td>${table.name} ${table.id.split('-').pop()}</td>
+              <td>${table.persons} pax</td>
+              <td>${statusText}</td>
+              <td>${ticket ? ticket.buyer_name || 'Desconocido' : '-'}</td>
+            </tr>
+          `;
         });
-
-        doc.setFontSize(16);
-        doc.text('Estado de Mesas', 14, yPos);
-        yPos += 5;
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Libres: ${tablesStats.free} | Reservadas: ${tablesStats.reserved} | Ocupadas: ${tablesStats.occupied} | Bloqueadas: ${tablesStats.blocked}`, 14, yPos);
-        yPos += 5;
-
-        autoTable(doc, {
-          startY: yPos,
-          head: [['Mesa', 'Aforo', 'Estado', 'Comprador']],
-          body: tableData,
-          theme: 'striped',
-          headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
-        });
-        yPos = (doc as any).lastAutoTable.finalY + 15;
+        html += `</table>`;
       }
 
-      // SECTION 4: Listado de Asistentes
-      doc.setFontSize(16);
-      doc.text('Últimos Asistentes Registrados (Max 50)', 14, yPos);
-      yPos += 5;
+      html += `
+          <h2>Últimos Asistentes Registrados (Max 50)</h2>
+      `;
 
       const attendeeLogs = filteredOrders
         .filter(o => o.accessesUsed > 0)
-        .slice(0, 50)
-        .map(o => [
-          o.buyerInfo?.name || 'Desconocido',
-          o.ticketName || 'General',
-          o.quantity.toString(),
-          o.accessesUsed.toString()
-        ]);
-
+        .slice(0, 50);
+        
       if (attendeeLogs.length > 0) {
-        autoTable(doc, {
-          startY: yPos,
-          head: [['Nombre', 'Tipo / Mesa', 'Accesos Comprados', 'Ingresaron']],
-          body: attendeeLogs,
-          theme: 'grid',
-          headStyles: { fillColor: [217, 209, 192], textColor: [71, 49, 31] },
+        html += `
+          <table>
+            <tr><th>Nombre</th><th>Tipo / Mesa</th><th>Accesos Comprados</th><th>Ingresaron</th></tr>
+        `;
+        attendeeLogs.forEach(o => {
+          html += `
+            <tr>
+              <td>${o.buyerInfo?.name || 'Desconocido'}</td>
+              <td>${o.ticketName || 'General'}</td>
+              <td>${o.quantity}</td>
+              <td>${o.accessesUsed}</td>
+            </tr>
+          `;
         });
+        html += `</table>`;
       } else {
-        doc.setFontSize(12);
-        doc.text('No hay ingresos registrados aún.', 14, yPos);
+        html += `<p style="color:#686a54;">No hay ingresos registrados aún.</p>`;
       }
 
-      // SAVE/EXPORT LOGIC
+      html += `
+        </body>
+        </html>
+      `;
+
       if (Platform.OS === 'web') {
-        doc.save('Boho_Sunday_Reporte.pdf');
-        return;
-      } else {
-        const base64 = doc.output('datauristring').split(',')[1];
-        // @ts-ignore
-        const dir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
-        if (!dir) return;
-        const fileUri = dir + 'Boho_Sunday_Reporte.pdf';
-        
-        await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
-        
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(fileUri, { UTI: 'com.adobe.pdf', dialogTitle: 'Compartir Reporte PDF' });
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(html);
+          win.document.close();
+          win.print();
         }
+        return;
+      }
+
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, { UTI: 'com.adobe.pdf', dialogTitle: 'Compartir Reporte PDF' });
+      } else {
+        Alert.alert('Éxito', 'PDF generado: ' + uri);
       }
 
     } catch (e: any) {
