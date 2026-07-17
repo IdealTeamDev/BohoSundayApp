@@ -8,8 +8,10 @@ import {
   KeyboardAvoidingView, 
   Platform,
   ActivityIndicator,
-  Image
+  Image,
+  Alert
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { User, Lock, ArrowRight, Fingerprint } from 'lucide-react-native';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -43,25 +45,44 @@ export default function LoginScreen() {
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
     const isEnrolled = await LocalAuthentication.isEnrolledAsync();
     setBiometricAvailable(hasHardware && isEnrolled);
+    
+    if (hasHardware && isEnrolled) {
+      const isBiometricEnabled = await AsyncStorage.getItem('@auth_biometric_enabled');
+      if (isBiometricEnabled === 'true') {
+        // Option to auto prompt on mount can be added here, 
+        // but it's safer to just let them click the icon, or we can prompt right away
+        // handleBiometricAuth(); // Uncomment if auto-prompt is desired
+      }
+    }
   };
 
   const handleBiometricAuth = async () => {
     try {
+      const isBiometricEnabled = await AsyncStorage.getItem('@auth_biometric_enabled');
+      if (isBiometricEnabled !== 'true') {
+         setError('La huella no está configurada. Inicia sesión con PIN y acepta activarla.');
+         return;
+      }
+      
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Ingreso Rápido Boho',
         fallbackLabel: 'Usar PIN',
       });
       if (result.success) {
-        // En un entorno real, la biometría estaría ligada a un token seguro
-        // Aquí simulamos que el admin entra directamente si su huella pasa
-        await executeLogin('admin', '123');
+        const savedUsr = await AsyncStorage.getItem('@auth_bio_user');
+        const savedPin = await AsyncStorage.getItem('@auth_bio_pin');
+        if (savedUsr && savedPin) {
+          await executeLogin(savedUsr, savedPin, false);
+        } else {
+          setError('Credenciales de huella no encontradas. Inicia sesión manualmente.');
+        }
       }
     } catch (e) {
       console.log(e);
     }
   };
 
-  const executeLogin = async (usr: string, pin: string) => {
+  const executeLogin = async (usr: string, pin: string, promptBiometric: boolean = true) => {
     setLoading(true);
     setError('');
     
@@ -72,6 +93,28 @@ export default function LoginScreen() {
         name: result.user.username,
         role: result.user.role
       };
+      
+      if (promptBiometric && biometricAvailable) {
+         const isBiometricEnabled = await AsyncStorage.getItem('@auth_biometric_enabled');
+         const hasPrompted = await AsyncStorage.getItem('@auth_biometric_prompted');
+         if (isBiometricEnabled !== 'true' && hasPrompted !== 'true') {
+           Alert.alert(
+             'Activar Ingreso con Huella',
+             '¿Deseas usar tu huella/FaceID para ingresar más rápido la próxima vez?',
+             [
+               { text: 'No, gracias', style: 'cancel', onPress: () => AsyncStorage.setItem('@auth_biometric_prompted', 'true') },
+               { text: 'Sí, activar', onPress: async () => {
+                  await AsyncStorage.setItem('@auth_biometric_enabled', 'true');
+                  await AsyncStorage.setItem('@auth_bio_user', usr);
+                  await AsyncStorage.setItem('@auth_bio_pin', pin);
+                  await AsyncStorage.setItem('@auth_biometric_prompted', 'true');
+               }}
+             ]
+           );
+         } else if (isBiometricEnabled === 'true') {
+            await AsyncStorage.setItem('@auth_bio_pin', pin);
+         }
+      }
       
       await login(validUser, result.token, expoPushToken?.data);
       // The useEffect will catch the user state change and redirect

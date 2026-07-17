@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { api } from '../../../services/api';
-import { Users, CheckCircle, XCircle, WifiOff } from 'lucide-react-native';
+import { Users, CheckCircle, XCircle, WifiOff, Wifi } from 'lucide-react-native';
 import { useDatabaseStore } from '../../../store/useDatabaseStore';
 import { useAuthStore } from '../../../store/useAuthStore';
 
@@ -22,6 +22,17 @@ export default function ScannerScreen() {
   
   const { user } = useAuthStore();
   const { tickets, processScan, isOnline, offlineQueue } = useDatabaseStore();
+
+  const [showOnlineBanner, setShowOnlineBanner] = useState(false);
+  const prevIsOnline = useRef(isOnline);
+
+  useEffect(() => {
+    if (prevIsOnline.current === false && isOnline === true) {
+      setShowOnlineBanner(true);
+      setTimeout(() => setShowOnlineBanner(false), 4000);
+    }
+    prevIsOnline.current = isOnline;
+  }, [isOnline]);
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -126,6 +137,12 @@ export default function ScannerScreen() {
           <Text style={styles.offlineText}>
             Sin conexión. {offlineQueue.length > 0 ? `(${offlineQueue.length} escaneos en cola)` : 'Escaneos se guardarán localmente.'}
           </Text>
+        </View>
+      )}
+      {showOnlineBanner && (
+        <View style={[styles.offlineBanner, { backgroundColor: '#22c55e' }]}>
+          <Wifi color="#fff" size={16} style={{ marginRight: 8 }} />
+          <Text style={styles.offlineText}>¡Conexión restaurada! Sincronizando...</Text>
         </View>
       )}
       <CameraView 
