@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking, Platform, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Image, Alert, Linking, Platform, FlatList, useWindowDimensions } from 'react-native';
 import { useDatabaseStore } from '../../store/useDatabaseStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Plus, X, Share2, MessageCircle, Search, Filter } from 'lucide-react-native';
@@ -13,6 +13,10 @@ export default function QRManagerScreen() {
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const { user } = useAuthStore();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
+  const numColumns = isDesktop ? 3 : 1;
 
   // Form state
   const [buyerName, setBuyerName] = useState('');
@@ -201,7 +205,7 @@ export default function QRManagerScreen() {
   const renderItem = ({ item: ticket }: { item: Ticket }) => {
     const isUsed = ticket.accesos_restantes === 0;
     return (
-      <TouchableOpacity style={[styles.ticketCard, isUsed && { opacity: 0.6 }]} onPress={() => openQrModal(ticket)}>
+      <TouchableOpacity style={[styles.ticketCard, isUsed && { opacity: 0.6 }, isDesktop && { flex: 1, marginBottom: 16 }]} onPress={() => openQrModal(ticket)}>
         <View style={styles.ticketInfo}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
             <Text style={styles.ticketName}>{ticket.buyer_name}</Text>
@@ -233,12 +237,15 @@ export default function QRManagerScreen() {
   return (
     <View style={styles.container}>
       <FlatList
+        key={numColumns}
         data={filteredTickets}
+        numColumns={numColumns}
+        columnWrapperStyle={isDesktop ? { gap: 16, paddingHorizontal: 4 } : undefined}
         keyExtractor={t => t.id}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={<Text style={styles.emptyText}>No se encontraron tickets.</Text>}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { maxWidth: isDesktop ? 1200 : '100%', alignSelf: 'center', width: '100%' }]}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
@@ -614,6 +621,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     height: '85%',
     padding: 24,
+    maxWidth: Platform.OS === 'web' ? 600 : '100%',
+    width: '100%',
+    alignSelf: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -714,6 +724,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 10,
+    maxWidth: Platform.OS === 'web' ? 500 : '100%',
+    width: Platform.OS === 'web' ? '100%' : 'auto',
+    alignSelf: 'center',
   },
   closeQrBtn: {
     position: 'absolute',
