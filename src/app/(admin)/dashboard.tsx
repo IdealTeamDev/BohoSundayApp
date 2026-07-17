@@ -311,7 +311,7 @@ export default function AdminDashboard() {
           ) : (
             <>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                {(newProductType === 'table' ? ['oasis', 'candela', 'backstage'] : ['bohemian', 'primitivo', 'vip']).map(zone => (
+                {(newProductType === 'table' ? ['oasis', 'candela', 'backstage'] : ['bohemian', 'lujo primitivo', 'vip']).map(zone => (
                   <TouchableOpacity 
                     key={zone}
                     style={{ 
