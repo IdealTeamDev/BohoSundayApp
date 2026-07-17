@@ -37,9 +37,10 @@ interface DatabaseState {
   removeProduct: (id: string, type: 'ticket'|'bed'|'table') => Promise<void>;
 
   // Staff functions
-  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer' | 'admin') => void;
-  toggleStaffStatus: (id: string) => void;
-  removeStaff: (id: string) => void;
+  addStaff: (name: string, username: string, pin: string, role: 'bouncer' | 'viewer' | 'admin') => Promise<void>;
+  toggleStaffStatus: (id: string) => Promise<void>;
+  removeStaff: (id: string) => Promise<void>;
+  updateStaffPin: (id: string, pin: string) => Promise<void>;
 
   // Walk-ins
   sellWalkInTicket: (tierId: string, capacity: number) => void;
@@ -452,9 +453,37 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
 
-      addStaff: (name, username, pin, role) => {},
-      toggleStaffStatus: (id) => {},
-      removeStaff: (id) => {},
+      addStaff: async (name, username, pin, role) => {
+         const { data, error } = await supabase.from('staff_users').insert({
+             name, username, pin_hash: pin, role, is_active: true
+         }).select();
+         if (error) throw error;
+         if (data && data[0]) {
+             set({ staff: [...get().staff, data[0] as StaffMember] });
+         }
+      },
+      toggleStaffStatus: async (id) => {
+         const staff = get().staff.find(s => s.id === id);
+         if (!staff) return;
+         const newStatus = !staff.is_active;
+         const { data, error } = await supabase.from('staff_users').update({ is_active: newStatus }).eq('id', id).select();
+         if (error) throw error;
+         if (data && data[0]) {
+             set({ staff: get().staff.map(s => s.id === id ? (data[0] as StaffMember) : s) });
+         }
+      },
+      removeStaff: async (id) => {
+         const { error } = await supabase.from('staff_users').delete().eq('id', id);
+         if (error) throw error;
+         set({ staff: get().staff.filter(s => s.id !== id) });
+      },
+      updateStaffPin: async (id, pin) => {
+         const { data, error } = await supabase.from('staff_users').update({ pin_hash: pin }).eq('id', id).select();
+         if (error) throw error;
+         if (data && data[0]) {
+             set({ staff: get().staff.map(s => s.id === id ? (data[0] as StaffMember) : s) });
+         }
+      },
 
       sellWalkInTicket: (tierId, capacity) => {},
 

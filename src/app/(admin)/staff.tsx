@@ -4,13 +4,13 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Redirect } from 'expo-router';
 import { UserPlus, Trash2, KeyRound, Edit2, X } from 'lucide-react-native';
 import { StaffMember } from '../../types';
-import { api } from '../../services/api';
+import { useDatabaseStore } from '../../store/useDatabaseStore';
 
 export default function StaffManagerScreen() {
   const { user } = useAuthStore();
+  const { staff, syncAll, addStaff, removeStaff, updateStaffPin, toggleStaffStatus } = useDatabaseStore();
   
-  const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [filterRole, setFilterRole] = useState<'all' | 'bouncer' | 'viewer'>('all');
   
   const [newName, setNewName] = useState('');
@@ -26,8 +26,7 @@ export default function StaffManagerScreen() {
   const loadStaff = async () => {
     try {
       setLoading(true);
-      const data = await api.getStaff();
-      setStaff(data);
+      await syncAll();
     } catch (e) {
       console.error(e);
       Alert.alert('Error', 'No se pudo cargar el equipo');
@@ -43,12 +42,11 @@ export default function StaffManagerScreen() {
   const handleAdd = async () => {
     if (newName.trim() !== '' && newUsername.trim() !== '' && newPin.trim() !== '') {
       try {
-        await api.addStaff({ name: newName, username: newUsername, pin: newPin, role: newRole });
+        await addStaff(newName, newUsername, newPin, newRole);
         setNewName('');
         setNewUsername('');
         setNewPin('');
         Alert.alert('Éxito', 'Usuario creado correctamente');
-        loadStaff();
       } catch (e: any) {
         Alert.alert('Error', e.message);
       }
@@ -57,14 +55,13 @@ export default function StaffManagerScreen() {
     }
   };
 
-  const removeStaff = async (member: StaffMember) => {
+  const handleRemoveStaff = async (member: StaffMember) => {
     if (Platform.OS === 'web') {
       const confirm = window.confirm(`¿Estás seguro de que deseas eliminar a ${member.name}?`);
       if (confirm) {
         try {
-          await api.deleteStaff(member.id);
+          await removeStaff(member.id);
           window.alert('Éxito: Usuario eliminado correctamente');
-          loadStaff();
         } catch (e: any) {
           window.alert('Error: ' + e.message);
         }
@@ -82,9 +79,8 @@ export default function StaffManagerScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.deleteStaff(member.id);
+              await removeStaff(member.id);
               Alert.alert('Éxito', 'Usuario eliminado correctamente');
-              loadStaff();
             } catch (e: any) {
               Alert.alert('Error', e.message);
             }
@@ -100,12 +96,11 @@ export default function StaffManagerScreen() {
         const confirm = window.confirm(`¿Estás seguro de que deseas cambiar la contraseña de ${selectedStaffForPin.name}?`);
         if (confirm) {
           try {
-            await api.updateStaffPin(selectedStaffForPin.id, updatePinValue);
+            await updateStaffPin(selectedStaffForPin.id, updatePinValue);
             setPinModalVisible(false);
             setUpdatePinValue('');
             setSelectedStaffForPin(null);
             window.alert('Éxito: Contraseña actualizada correctamente');
-            loadStaff();
           } catch (e: any) {
             window.alert('Error: ' + e.message);
           }
@@ -123,12 +118,11 @@ export default function StaffManagerScreen() {
             style: 'default',
             onPress: async () => {
               try {
-                await api.updateStaffPin(selectedStaffForPin.id, updatePinValue);
+                await updateStaffPin(selectedStaffForPin.id, updatePinValue);
                 setPinModalVisible(false);
                 setUpdatePinValue('');
                 setSelectedStaffForPin(null);
                 Alert.alert('Éxito', 'Contraseña actualizada correctamente');
-                loadStaff();
               } catch (e: any) {
                 Alert.alert('Error', e.message);
               }
@@ -230,7 +224,7 @@ export default function StaffManagerScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 0 }}>
                   <Switch
                     value={member.is_active}
-                    onValueChange={() => {}}
+                    onValueChange={() => toggleStaffStatus(member.id)}
                     trackColor={{ false: '#f0ebe1', true: '#1a1614' }}
                     thumbColor="#ffffff"
                     style={{ transform: [{ scale: 0.8 }] }}
@@ -242,7 +236,7 @@ export default function StaffManagerScreen() {
                   }}>
                     <Edit2 color="#1a1614" size={18} />
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.deleteBtnIcon, { marginLeft: 8 }]} onPress={() => removeStaff(member)}>
+                  <TouchableOpacity style={[styles.deleteBtnIcon, { marginLeft: 8 }]} onPress={() => handleRemoveStaff(member)}>
                     <Trash2 color="#ff4d4d" size={18} />
                   </TouchableOpacity>
                 </View>
