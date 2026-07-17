@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, ActivityIndicator, RefreshControl, useWindowDimensions } from 'react-native';
 import { useAuthStore } from '../../store/useAuthStore';
 import { formatCOP } from '../../utils/format';
 import { FileText, Download, DollarSign, Users, Activity, Coffee } from 'lucide-react-native';
@@ -11,6 +11,9 @@ import { useDatabaseStore } from '../../store/useDatabaseStore';
 export default function ReportsScreen() {
   const { user } = useAuthStore();
   const showRevenue = true; 
+  
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth >= 768;
   
   const { tickets, tables } = useDatabaseStore();
   const [orders, setOrders] = useState<any[]>([]);
@@ -302,7 +305,7 @@ export default function ReportsScreen() {
   return (
     <ScrollView 
       style={styles.container} 
-      contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}
+      contentContainerStyle={{ paddingBottom: 40, paddingTop: 10, maxWidth: isDesktop ? 1000 : '100%', alignSelf: 'center', width: '100%' }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#231e1a" />}
     >
       
@@ -336,9 +339,9 @@ export default function ReportsScreen() {
           </View>
 
           {/* KPI CARDS */}
-          <View style={styles.kpiContainer}>
+          <View style={[styles.kpiContainer, isDesktop && { flexDirection: 'row' }]}>
             {showRevenue && (
-              <View style={[styles.kpiCard, styles.kpiCardPrimary]}>
+              <View style={[styles.kpiCard, styles.kpiCardPrimary, isDesktop && { flex: 2 }]}>
                 <View style={styles.kpiHeader}>
                   <Text style={[styles.kpiTitle, { color: 'rgba(255,255,255,0.8)' }]}>Ingresos Totales</Text>
                   <View style={styles.iconCircleLight}>
@@ -349,7 +352,7 @@ export default function ReportsScreen() {
               </View>
             )}
 
-            <View style={styles.kpiRow}>
+            <View style={[styles.kpiRow, isDesktop && { flex: 3 }]}>
               <View style={styles.kpiCardSmall}>
                 <View style={styles.kpiHeader}>
                   <Text style={styles.kpiTitle}>Órdenes (Ventas)</Text>
@@ -376,9 +379,9 @@ export default function ReportsScreen() {
             <Text style={styles.sectionSubtitle}>Ingresos y asistencia real de cada área</Text>
           </View>
           
-          <View style={styles.listContainer}>
+          <View style={[styles.listContainer, isDesktop && { flexDirection: 'row', flexWrap: 'wrap', gap: 16, backgroundColor: 'transparent', borderWidth: 0, padding: 0, elevation: 0 }]}>
             {salesByTier.length > 0 ? salesByTier.map((data, idx) => (
-              <View key={data.name} style={[styles.tierRow, idx === salesByTier.length - 1 && { borderBottomWidth: 0 }]}>
+              <View key={data.name} style={[styles.tierRow, idx === salesByTier.length - 1 && !isDesktop && { borderBottomWidth: 0 }, isDesktop && { width: '48%', backgroundColor: '#ffffff', borderRadius: 16, borderWidth: 1, borderColor: '#f0ebe1' }]}>
                 <View style={styles.tierTop}>
                   <View>
                     <Text style={styles.tierName}>{data.name}</Text>

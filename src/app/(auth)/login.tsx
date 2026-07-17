@@ -139,7 +139,8 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.header}>
+      <View style={styles.contentWrapper}>
+        <View style={styles.header}>
         <Image 
           source={require('../../../assets/images/logo.png')} 
           style={styles.logo} 
@@ -198,7 +199,7 @@ export default function LoginScreen() {
             <Fingerprint color="#686a54" size={32} />
           </TouchableOpacity>
         )}
-
+      </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -209,10 +210,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f4efe9',
     justifyContent: 'center',
-    padding: 24,
-    alignSelf: 'center',
+  },
+  contentWrapper: {
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 450 : '100%',
+    alignSelf: 'center',
+    padding: 24,
   },
   header: {
     alignItems: 'center',
