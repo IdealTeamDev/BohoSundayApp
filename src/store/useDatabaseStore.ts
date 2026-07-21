@@ -284,7 +284,7 @@ export const useDatabaseStore = create<DatabaseState>()(
           const { tickets } = get();
           const ticket = Object.values(tickets).find(t => t.ticket_id === tableId);
           if (ticket) {
-            await supabase.from('purchased_tickets').update({ status: 'invalid' }).eq('order_id', ticket.order_id);
+            await supabase.from('purchased_tickets').delete().eq('order_id', ticket.order_id);
           }
           await supabase.from('boleteria_mesas').update({ available: true }).eq('id', tableId);
           get().syncAll();
