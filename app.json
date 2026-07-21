@@ -2,7 +2,7 @@
   "expo": {
     "name": "Boho Sunday Staff",
     "slug": "AppAdmin",
-    "version": "1.0.2",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "appadmin",
@@ -11,7 +11,7 @@
       "bundleIdentifier": "com.bohosunday.staffapp"
     },
     "android": {
-      "versionCode": 3,
+      "versionCode": 5,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
