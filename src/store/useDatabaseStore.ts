@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StaffMember, Table, Ticket, Tier, Product } from '../types';
 import { supabase } from '../services/supabase';
+import { api } from '../services/api';
 
 interface DatabaseState {
   tables: Table[];
@@ -490,8 +491,7 @@ export const useDatabaseStore = create<DatabaseState>()(
          }
       },
       removeStaff: async (id) => {
-         const { error } = await supabase.from('staff_users').delete().eq('id', id);
-         if (error) throw error;
+         await api.deleteStaff(id);
          set({ staff: get().staff.filter(s => s.id !== id) });
       },
       updateStaffPin: async (id, pin) => {
