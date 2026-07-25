@@ -471,23 +471,19 @@ export const useDatabaseStore = create<DatabaseState>()(
       },
 
 
-      addStaff: async (name, username, pin, role) => {
-         const { data, error } = await supabase.from('staff_users').insert({
-             name, username, pin_hash: pin, role, is_active: true
-         }).select();
-         if (error) throw error;
-         if (data && data[0]) {
-             set({ staff: [...get().staff, data[0] as StaffMember] });
+       addStaff: async (name, username, pin, role) => {
+         const res = await api.addStaff({ name, username, pin, role });
+         if (res) {
+             set({ staff: [...get().staff, res as StaffMember] });
          }
       },
       toggleStaffStatus: async (id) => {
          const staff = get().staff.find(s => s.id === id);
          if (!staff) return;
          const newStatus = !staff.is_active;
-         const { data, error } = await supabase.from('staff_users').update({ is_active: newStatus }).eq('id', id).select();
-         if (error) throw error;
-         if (data && data[0]) {
-             set({ staff: get().staff.map(s => s.id === id ? (data[0] as StaffMember) : s) });
+         const res = await api.updateStaff(id, { is_active: newStatus });
+         if (res && res.data) {
+             set({ staff: get().staff.map(s => s.id === id ? (res.data as StaffMember) : s) });
          }
       },
       removeStaff: async (id) => {
@@ -495,12 +491,12 @@ export const useDatabaseStore = create<DatabaseState>()(
          set({ staff: get().staff.filter(s => s.id !== id) });
       },
       updateStaffPin: async (id, pin) => {
-         const { data, error } = await supabase.from('staff_users').update({ pin_hash: pin }).eq('id', id).select();
-         if (error) throw error;
-         if (data && data[0]) {
-             set({ staff: get().staff.map(s => s.id === id ? (data[0] as StaffMember) : s) });
+         const res = await api.updateStaff(id, { pin });
+         if (res && res.data) {
+             set({ staff: get().staff.map(s => s.id === id ? (res.data as StaffMember) : s) });
          }
       },
+
 
       sellWalkInTicket: (tierId, capacity) => {},
 

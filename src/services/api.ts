@@ -115,14 +115,15 @@ export const api = {
     return json;
   },
 
-  updateStaffPin: async (id: string, pin: string) => {
+  updateStaff: async (id: string, updates: { pin?: string, is_active?: boolean }) => {
     const res = await fetch(`${API_URL}/admin/staff`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ id, pin })
+      body: JSON.stringify({ id, ...updates })
     });
     const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Error al actualizar PIN');
+    if (!res.ok) throw new Error(json.error || 'Error al actualizar staff');
     return json;
   }
+
 };
