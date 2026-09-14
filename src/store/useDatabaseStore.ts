@@ -647,9 +647,20 @@ export const useDatabaseStore = create<DatabaseState>()(
       getFusedProductsForActiveTier: () => {
         const tier = get().getActiveTier();
         const products = get().products || [];
-        if (!tier) return products.map(p => ({ ...p, currentPrice: p.basePrice }));
-        
-        return products.map(p => ({
+        const isBelieversStage = tier
+          ? (tier.name || '').toLowerCase().includes('believer') || (tier.id || '').toLowerCase().includes('believer')
+          : false;
+
+        const filteredProducts = products.filter(p => {
+          if (p.id === 'general') {
+            return isBelieversStage;
+          }
+          return true;
+        });
+
+        if (!tier) return filteredProducts.map(p => ({ ...p, currentPrice: p.basePrice }));
+
+        return filteredProducts.map(p => ({
           ...p,
           currentPrice: tier.priceOverrides?.[p.id] !== undefined ? tier.priceOverrides[p.id] : p.basePrice
         }));
