@@ -124,6 +124,23 @@ export const api = {
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Error al actualizar staff');
     return json;
-  }
+  },
 
+  getEditions: async () => {
+    const res = await fetch(`${API_URL}/admin/editions`, { headers: getAuthHeaders() });
+    if (!res.ok) throw new Error('Failed to fetch editions');
+    return await res.json();
+  },
+
+  setActiveEdition: async (slug: string) => {
+    const res = await fetch(`${API_URL}/admin/editions`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ action: 'set_active', slug })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Error al cambiar la edición activa');
+    return json;
+  }
 };
+

@@ -31,6 +31,15 @@ export interface Tier {
   priceOverrides: Record<string, number>;
 }
 
+export interface EventEdition {
+  id: string;
+  slug: string;
+  name: string;
+  is_active: boolean;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
 export interface Ticket {
   id: string;
   order_id: string;
@@ -48,6 +57,8 @@ export interface Ticket {
   payment_ref: string;
   created_at: string;
   ticket_price: string;
+  edition_slug?: string;
+  edition_name?: string;
 }
 
 export interface Table {
@@ -67,3 +78,4 @@ export interface Zone {
   capacity: number;
   currentOccupancy: number;
 }
+

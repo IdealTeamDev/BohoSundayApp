@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StaffMember, Table, Ticket, Tier, Product } from '../types';
+import { StaffMember, Table, Ticket, Tier, Product, EventEdition } from '../types';
 import { supabase } from '../services/supabase';
 import { api } from '../services/api';
 
@@ -11,6 +11,9 @@ interface DatabaseState {
   products: Product[];
   tiers: Tier[];
   staff: StaffMember[];
+  editions: EventEdition[];
+  activeEdition: EventEdition | null;
+  selectedEditionSlug: string;
 
   isOnline: boolean;
   offlineQueue: { order_id: string; count: number; staff_username: string; scanned_at: string; scan_result: string; ticket_checksum: string }[];
@@ -18,6 +21,9 @@ interface DatabaseState {
 
   // Sync actions
   syncAll: () => Promise<void>;
+  fetchEditions: () => Promise<void>;
+  setSelectedEditionSlug: (slug: string) => void;
+  switchActiveEdition: (slug: string) => Promise<boolean>;
   subscribeToRealtime: () => void;
   flushOfflineQueue: () => Promise<void>;
 
@@ -63,33 +69,147 @@ export const useDatabaseStore = create<DatabaseState>()(
       products: [],
       tiers: [],
       staff: [],
+      editions: [],
+      activeEdition: null,
+      selectedEditionSlug: 'active',
       isOnline: true,
       offlineQueue: [],
       activeDeviceIds: {},
 
-      syncAll: async () => {
+      setSelectedEditionSlug: (slug: string) => {
+        set({ selectedEditionSlug: slug });
+        get().syncAll();
+      },
+
+      fetchEditions: async () => {
         try {
-          // Fetch tickets
-          const { data: ticketsData } = await supabase.from('purchased_tickets').select('*');
-          if (ticketsData) {
-            const ticketsRecord: Record<string, Ticket> = {};
-            ticketsData.forEach(t => { ticketsRecord[t.order_id] = t as Ticket; });
-            set({ tickets: ticketsRecord });
+          const { data } = await supabase
+            .from('event_editions')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          let list: EventEdition[] = [];
+          let active: EventEdition = {
+            id: 'entre-soles',
+            slug: 'entre-soles',
+            name: 'Entre Soles',
+            is_active: true,
+          };
+
+          if (data && data.length > 0) {
+            list = data.map((item: any) => ({
+              id: item.id || item.slug,
+              slug: item.slug || item.id,
+              name: item.name,
+              is_active: Boolean(item.is_active),
+              start_date: item.start_date || null,
+              end_date: item.end_date || null,
+            }));
+            const foundActive = list.find((e) => e.is_active);
+            if (foundActive) {
+              active = foundActive;
+            }
+          } else {
+            list = [active];
           }
 
-          // Fetch tables
+          set({ editions: list, activeEdition: active });
+        } catch (e) {
+          console.error('Failed to fetch editions', e);
+        }
+      },
+
+      switchActiveEdition: async (slug: string) => {
+        try {
+          const result = await api.setActiveEdition(slug);
+          if (result && result.success) {
+            await get().syncAll();
+            return true;
+          }
+          return false;
+        } catch (e) {
+          console.error('Failed to switch active edition', e);
+          return false;
+        }
+      },
+
+      syncAll: async () => {
+        try {
+          // 1. Fetch editions from Supabase
+          const { data: editionsData } = await supabase
+            .from('event_editions')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          let currentEditions: EventEdition[] = [];
+          let currentActive: EventEdition = {
+            id: 'entre-soles',
+            slug: 'entre-soles',
+            name: 'Entre Soles',
+            is_active: true,
+          };
+
+          if (editionsData && editionsData.length > 0) {
+            currentEditions = editionsData.map((item: any) => ({
+              id: item.id || item.slug,
+              slug: item.slug || item.id,
+              name: item.name,
+              is_active: Boolean(item.is_active),
+              start_date: item.start_date || null,
+              end_date: item.end_date || null,
+            }));
+            const found = currentEditions.find((e) => e.is_active);
+            if (found) currentActive = found;
+          } else {
+            currentEditions = [currentActive];
+          }
+
+          set({ editions: currentEditions, activeEdition: currentActive });
+
+          // Determine edition slug to filter tickets by
+          const { selectedEditionSlug } = get();
+          const targetSlug =
+            !selectedEditionSlug || selectedEditionSlug === 'active'
+              ? currentActive.slug
+              : selectedEditionSlug;
+
+          // 2. Fetch tickets filtered by target edition_slug
+          let query = supabase.from('purchased_tickets').select('*');
+          if (targetSlug !== 'all') {
+            query = query.eq('edition_slug', targetSlug);
+          }
+
+          const { data: ticketsData } = await query;
+          const ticketsRecord: Record<string, Ticket> = {};
+          if (ticketsData) {
+            ticketsData.forEach((t) => {
+              ticketsRecord[t.order_id] = t as Ticket;
+            });
+          }
+          set({ tickets: ticketsRecord });
+
+          // 3. Fetch tables and calculate availability according to active edition
           const { data: tablesData } = await supabase.from('boleteria_mesas').select('*');
           if (tablesData) {
-            const mappedTables: Table[] = tablesData.map(t => ({
-              id: t.id,
-              zone: t.zona || t.zone || 'VIP',
-              name: t.mesa || t.name || t.id,
-              number: t.numero || t.number || '1',
-              persons: t.aforo || t.persons || 10,
-              price: t.precio?.toString() || t.price?.toString() || '0',
-              available: t.disponible ?? t.available ?? true,
-              order_id: t.order_id
-            }));
+            const mappedTables: Table[] = tablesData.map((t) => {
+              // Find if table has a paid ticket in the selected target edition
+              const tableTicket = Object.values(ticketsRecord).find(
+                (pt) =>
+                  pt.ticket_id === t.id &&
+                  (pt.status === 'paid' || pt.status === 'used')
+              );
+
+              return {
+                id: t.id,
+                zone: t.zona || t.zone || 'VIP',
+                name: t.mesa || t.name || t.id,
+                number: t.numero || t.number || '1',
+                persons: t.aforo || t.persons || 10,
+                price: t.precio?.toString() || t.price?.toString() || '0',
+                available: tableTicket ? false : (t.disponible ?? t.available ?? true),
+                order_id: tableTicket?.order_id || t.order_id,
+              };
+            });
             set({ tables: mappedTables });
           }
 
@@ -97,19 +217,19 @@ export const useDatabaseStore = create<DatabaseState>()(
           const { data: prods } = await supabase.from('boleteria_individual').select('*');
           let combinedProducts: Product[] = [];
           if (prods) {
-            combinedProducts = prods.map(p => ({
+            combinedProducts = prods.map((p) => ({
               id: p.id,
               name: p.name,
               type: 'ticket' as const,
-              basePrice: parseFloat(p.price || '0')
+              basePrice: parseFloat(p.price || '0'),
             }));
           }
           if (tablesData) {
-            const tablesAsProducts = tablesData.map(t => ({
+            const tablesAsProducts = tablesData.map((t) => ({
               id: t.id,
               name: t.name,
               type: (t.name.toLowerCase().includes('cama') ? 'bed' : 'table') as 'bed' | 'table',
-              basePrice: parseFloat(t.price || '0')
+              basePrice: parseFloat(t.price || '0'),
             }));
             combinedProducts = [...combinedProducts, ...tablesAsProducts];
           }
@@ -124,32 +244,42 @@ export const useDatabaseStore = create<DatabaseState>()(
           // Fetch event stages (tiers)
           const { data: stagesData } = await supabase.from('event_stages').select('*');
           if (stagesData) {
-            const mappedTiers = stagesData.map(s => ({
+            const mappedTiers = stagesData.map((s) => ({
               id: s.id,
               name: s.name,
               endDate: s.end_date,
-              priceOverrides: typeof s.prices === 'string' ? JSON.parse(s.prices) : (s.prices || {})
+              priceOverrides:
+                typeof s.prices === 'string' ? JSON.parse(s.prices) : s.prices || {},
             }));
             set({ tiers: mappedTiers });
           }
-
         } catch (e) {
-          console.error("Sync failed", e);
+          console.error('Sync failed', e);
         }
       },
 
       subscribeToRealtime: () => {
         supabase
-          .channel('public:purchased_tickets')
+          .channel('public:app_realtime_all')
           .on(
             'postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'purchased_tickets' },
-            (payload) => {
-              const updatedTicket = payload.new as Ticket;
-              const { tickets } = get();
-              if (tickets[updatedTicket.order_id]) {
-                set({ tickets: { ...tickets, [updatedTicket.order_id]: updatedTicket } });
-              }
+            { event: '*', schema: 'public', table: 'purchased_tickets' },
+            () => {
+              get().syncAll();
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'event_editions' },
+            () => {
+              get().syncAll();
+            }
+          )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'boleteria_mesas' },
+            () => {
+              get().syncAll();
             }
           )
           .subscribe();
@@ -316,6 +446,10 @@ export const useDatabaseStore = create<DatabaseState>()(
              ticketNumber = table.number;
           }
 
+          const activeEd = get().activeEdition;
+          const editionSlug = activeEd?.slug || 'entre-soles';
+          const editionName = activeEd?.name || 'Entre Soles';
+
           // Insert into purchased_tickets
           const { error: insertError } = await supabase.from('purchased_tickets').insert({
             order_id: orderId,
@@ -332,7 +466,9 @@ export const useDatabaseStore = create<DatabaseState>()(
             zone: zone,
             ticket_number: ticketNumber ? parseInt(String(ticketNumber)) : null,
             checksum: checksum,
-            payment_ref: 'manual-sale'
+            payment_ref: 'manual-sale',
+            edition_slug: editionSlug,
+            edition_name: editionName,
           });
 
           if (insertError) throw insertError;

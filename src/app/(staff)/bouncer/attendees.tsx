@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Alert, Linking, Platform, Image } from 'react-native';
 
 export default function AttendeesScreen() {
-  const { tickets, processScan } = useDatabaseStore();
+  const { tickets, processScan, activeEdition } = useDatabaseStore();
   const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   
@@ -54,7 +54,8 @@ export default function AttendeesScreen() {
       const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(qrImageUrl)}`);
       const shortUrl = await response.text();
       
-      const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para el Boho Sunday Colombiamoda Edition.\n\n🎟️ Entrada: ${selectedTicket.ticket_name?.toUpperCase() || 'GENERAL'}\n👥 Cantidad: ${selectedTicket.total_accesos} Personas\n\nAbre este enlace para ver tu Código QR:\n${shortUrl}`;
+      const edName = activeEdition?.name || selectedTicket.edition_name || 'Entre Soles';
+      const message = `Hola ${selectedTicket.buyer_name},\n\nAquí tienes tu entrada para Boho Sunday ${edName} Edition.\n\n🎟️ Entrada: ${selectedTicket.ticket_name?.toUpperCase() || 'GENERAL'}\n👥 Cantidad: ${selectedTicket.total_accesos} Personas\n\nAbre este enlace para ver tu Código QR:\n${shortUrl}`;
       
       Linking.openURL(`whatsapp://send?phone=${number}&text=${encodeURIComponent(message)}`).catch(() => {
         Alert.alert('Error', 'No se pudo abrir WhatsApp. Asegúrate de tenerlo instalado.');
