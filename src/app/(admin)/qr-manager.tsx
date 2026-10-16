@@ -9,7 +9,7 @@ import { Ticket } from '../../types';
 import { COUNTRIES } from '../../utils/countries';
 
 export default function QRManagerScreen() {
-  const { tickets, tiers, tables, getActiveTier, getFusedProductsForActiveTier, adminCreateTicket } = useDatabaseStore();
+  const { tickets, tiers, tables, activeEdition, getActiveTier, getFusedProductsForActiveTier, adminCreateTicket } = useDatabaseStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const { user } = useAuthStore();

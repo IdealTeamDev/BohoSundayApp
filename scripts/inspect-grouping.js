@@ -1,10 +1,19 @@
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(
-  'https://hctdykhdekhwvmhrdrnv.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdGR5a2hkZWtod3ZtaHJkcm52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2ODIyMjcsImV4cCI6MjA5OTI1ODIyN30.Hy_FKrK3X26_BYtSMznzNGxJH-35UdiOKE_nBpFN5e8'
-);
-async function main() {
-  const { data, error } = await supabase.from('boleteria_mesas').select('id, name, zone, price');
-  console.log(data);
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Error: Variables de entorno Supabase no configuradas.');
+  process.exit(1);
 }
-main();
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function check() {
+  const { data, error } = await supabase.from('boleteria_mesas').select('*');
+  console.log('boleteria_mesas count:', data?.length, error);
+}
+
+check();

@@ -1,32 +1,19 @@
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  'https://hctdykhdekhwvmhrdrnv.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdGR5a2hkZWtod3ZtaHJkcm52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2ODIyMjcsImV4cCI6MjA5OTI1ODIyN30.Hy_FKrK3X26_BYtSMznzNGxJH-35UdiOKE_nBpFN5e8' // anon key
-);
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-async function testRealtime() {
-  const channel = supabase.channel('public:purchased_tickets');
-  channel.on(
-    'postgres_changes',
-    { event: 'UPDATE', schema: 'public', table: 'purchased_tickets' },
-    (payload) => {
-      console.log('REALTIME PAYLOAD:', payload.new);
-    }
-  ).subscribe((status) => {
-    console.log('Sub status:', status);
-    if (status === 'SUBSCRIBED') {
-      setTimeout(async () => {
-         const { data, error } = await supabase.from('purchased_tickets')
-            .update({ accesos_restantes: 5 })
-            .eq('order_id', 'ORD-QUICK-PRIMITIVO-17-1784055247939');
-         console.log('Updated:', error);
-      }, 1000);
-    }
-  });
-
-  // Keep alive for a bit
-  setTimeout(() => { process.exit(0); }, 5000);
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Error: Variables de entorno Supabase no configuradas.');
+  process.exit(1);
 }
 
-testRealtime();
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function check() {
+  const { data, error } = await supabase.from('purchased_tickets').select('*').limit(1);
+  console.log('test-realtime result:', data, error);
+}
+
+check();

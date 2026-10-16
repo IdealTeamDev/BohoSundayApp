@@ -30,7 +30,7 @@ export default function RootLayout() {
     }, 100);
 
     // Network Listener
-    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+    const unsubscribeNetInfo = NetInfo.addEventListener((state: any) => {
       const online = !!state.isConnected && state.isInternetReachable !== false;
       
       const { isOnline } = useDatabaseStore.getState();
