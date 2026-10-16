@@ -9,6 +9,14 @@ export default function DashboardScreen() {
   const ticketsArr = Object.values(tickets) as Ticket[];
   const totalExpected = ticketsArr.reduce((acc, t) => acc + (t.total_accesos || 0), 0);
   const totalArrived = ticketsArr.reduce((acc, t) => acc + ((t.total_accesos - t.accesos_restantes) || 0), 0);
+
+  const guestTickets = ticketsArr.filter(t => t.ticket_id === 'invitado_anytime' || t.ticket_name?.toLowerCase().includes('invitado'));
+  const guestExpected = guestTickets.reduce((acc, t) => acc + (t.total_accesos || 0), 0);
+  const guestArrived = guestTickets.reduce((acc, t) => acc + ((t.total_accesos - t.accesos_restantes) || 0), 0);
+
+  const paidTickets = ticketsArr.filter(t => !(t.ticket_id === 'invitado_anytime' || t.ticket_name?.toLowerCase().includes('invitado')));
+  const paidExpected = paidTickets.reduce((acc, t) => acc + (t.total_accesos || 0), 0);
+  const paidArrived = paidTickets.reduce((acc, t) => acc + ((t.total_accesos - t.accesos_restantes) || 0), 0);
   
   const availableTables = (tables as Table[]).filter(t => t.available).length;
   const reservedTables = 0; // tables.filter(t => t.status === 'reserved').length;
@@ -25,6 +33,21 @@ export default function DashboardScreen() {
         <Text style={styles.heroTitle}>Aforo Ingresado</Text>
         <Text style={styles.heroBigNumber}>{totalArrived}</Text>
         <Text style={styles.heroSubtitle}>de {totalExpected} personas esperadas</Text>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Desglose de Aforo</Text>
+      </View>
+
+      <View style={[styles.grid, { marginBottom: 28 }]}>
+        <View style={styles.statBox}>
+          <Text style={[styles.statNumber, { color: '#a3c293' }]}>{paidArrived} <Text style={{ fontSize: 16, color: '#a1a1aa' }}>/ {paidExpected}</Text></Text>
+          <Text style={styles.statLabel}>Entradas Compradas</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={[styles.statNumber, { color: '#eab308' }]}>{guestArrived} <Text style={{ fontSize: 16, color: '#a1a1aa' }}>/ {guestExpected}</Text></Text>
+          <Text style={styles.statLabel}>Invitados (Cortesía)</Text>
+        </View>
       </View>
 
       <View style={styles.sectionHeader}>

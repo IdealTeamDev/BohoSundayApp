@@ -93,7 +93,8 @@ export default function ScannerScreen() {
       const res = await processScan(currentOrderId, count, staffUsername);
       if (res.success) {
         const remaining = (orderInfo?.accesos_restantes || count) - count;
-        showFeedback('success', `${count} acceso(s) confirmado(s).\nQuedan ${remaining}.`);
+        const isGuest = orderInfo?.ticket_id === 'invitado_anytime' || orderInfo?.ticket_name?.toLowerCase().includes('invitado');
+        showFeedback('success', `${count} acceso(s) confirmado(s)${isGuest ? ' [INVITADO]' : ''}.\nQuedan ${remaining}.`);
       } else {
         showFeedback('error', res.message || 'Error al validar.');
       }
@@ -288,6 +289,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: { color: '#231e1a', fontSize: 24, fontFamily: 'NunitoSans_600SemiBold', marginBottom: 8 },
+  guestBadge: {
+    backgroundColor: '#fef3c7',
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  guestBadgeText: {
+    color: '#b45309',
+    fontSize: 12,
+    fontFamily: 'NunitoSans_700Bold',
+  },
   infoBox: {
     backgroundColor: '#f4efe9',
     padding: 16,

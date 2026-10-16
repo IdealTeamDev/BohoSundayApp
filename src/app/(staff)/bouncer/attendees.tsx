@@ -126,6 +126,7 @@ export default function AttendeesScreen() {
         renderItem={({ item }) => {
           const remaining = item.accesos_restantes;
           const isComplete = remaining === 0;
+          const isGuest = item.ticket_id === 'invitado_anytime' || item.ticket_name?.toLowerCase().includes('invitado');
 
           return (
             <TouchableOpacity onPress={() => openQrModal(item)} style={[styles.card, item.status === 'invalid' && { borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)' }, isDesktop && { flex: 1, marginBottom: 16 }]}>
@@ -134,7 +135,13 @@ export default function AttendeesScreen() {
                 <Text style={styles.meta}>Código: {item.order_id}</Text>
                 <Text style={styles.meta}>Ingresos: {item.total_accesos - item.accesos_restantes} / {item.total_accesos}</Text>
                 
-                {item.status === 'invalid' ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                  {isGuest && (
+                    <View style={styles.guestTag}>
+                      <Text style={styles.guestTagText}>⭐ INVITADO</Text>
+                    </View>
+                  )}
+                  {item.status === 'invalid' ? (
                   <View style={[styles.completeTag, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
                     <Text style={[styles.completeText, { color: '#ef4444' }]}>LISTA NEGRA</Text>
                   </View>
@@ -147,6 +154,7 @@ export default function AttendeesScreen() {
                     <Text style={styles.pendingText}>FALTAN {remaining}</Text>
                   </View>
                 )}
+                </View>
               </View>
 
               {!isComplete && item.status !== 'invalid' && (
@@ -298,6 +306,20 @@ const styles = StyleSheet.create({
   meta: {
     color: '#686a54',
     fontSize: 14,
+  },
+  guestTag: {
+    backgroundColor: '#fef3c7',
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  guestTagText: {
+    color: '#b45309',
+    fontSize: 12,
+    fontFamily: 'NunitoSans_700Bold',
   },
   completeTag: {
     backgroundColor: 'rgba(71, 49, 31, 0.1)',

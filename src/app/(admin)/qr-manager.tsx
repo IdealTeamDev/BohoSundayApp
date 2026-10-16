@@ -47,7 +47,8 @@ export default function QRManagerScreen() {
   const filteredTickets = ticketsArr.filter(t => {
     const searchMatch = t.buyer_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         (t.buyer_phone || '').includes(searchQuery) || 
-                        t.order_id.toLowerCase().includes(searchQuery.toLowerCase());
+                        t.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (t.ticket_name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const isUsed = t.accesos_restantes === 0;
     const statusMatch = filterStatus === 'all' ? true : (filterStatus === 'used' ? isUsed : !isUsed);
     return searchMatch && statusMatch;
