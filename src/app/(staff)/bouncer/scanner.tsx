@@ -6,6 +6,7 @@ import { api } from '../../../services/api';
 import { Users, CheckCircle, XCircle, WifiOff, Wifi } from 'lucide-react-native';
 import { useDatabaseStore } from '../../../store/useDatabaseStore';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { WebCameraScanner } from '../../../components/WebCameraScanner';
 
 const { width, height } = Dimensions.get('window');
 
@@ -122,7 +123,7 @@ export default function ScannerScreen() {
     }, 3000);
   };
 
-  if (!permission?.granted) {
+  if (Platform.OS !== 'web' && !permission?.granted) {
     return (
       <View style={styles.container}>
         <Text style={{ color: 'white' }}>Necesitamos acceso a la cámara</Text>
@@ -146,14 +147,21 @@ export default function ScannerScreen() {
           <Text style={styles.offlineText}>¡Conexión restaurada! Sincronizando...</Text>
         </View>
       )}
-      <CameraView 
-        style={StyleSheet.absoluteFill}
-        facing="back"
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ['qr'],
-        }}
-      />
+      {Platform.OS === 'web' ? (
+        <WebCameraScanner
+          onScan={(data) => handleBarCodeScanned({ data })}
+          isActive={!scanned && !loading && !showPartialModal}
+        />
+      ) : (
+        <CameraView 
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          barcodeScannerSettings={{
+            barcodeTypes: ['qr'],
+          }}
+        />
+      )}
 
       <View style={styles.targetContainer}>
         {!scanned && <View style={styles.targetBox} />}
@@ -229,6 +237,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 500 : '100%',
+    position: 'relative',
+    overflow: 'hidden',
   },
   offlineBanner: {
     backgroundColor: '#ef4444',

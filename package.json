@@ -34,6 +34,7 @@
     "expo-web-browser": "~56.0.5",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "jsqr": "^1.4.0",
     "lucide-react-native": "^1.21.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
